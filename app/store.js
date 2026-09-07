@@ -24,6 +24,7 @@ import { readModuleJson, writeModuleJson, moduleFolderId, ensureFolder, createFi
          findChild, listFolder, readTextById } from './drive.js'
 import { ready } from './ready.js'
 import { restoreDriveUrls } from './media.js'
+import { patchHubIndex } from './hub-index.js'
 
 // The page's shim stashed the real fetch before replacing window.fetch.
 // Binding window.fetch here would capture the shim instead and make
@@ -96,6 +97,17 @@ export async function flush() {
         Store._dirty.add(kind)
         emit('pghub:error', { kind, message: e.message })
         break
+      }
+      // The landing page reads a baked cross-module index, not this file, so a
+      // term added here would stay invisible there until someone rebuilt it.
+      // Patching it in the same breath is what makes a new term show up on the
+      // hub by itself; it writes nothing when the index is already correct.
+      // Its own try/catch: the module file is saved either way, and failing to
+      // touch the index must not re-queue it or lose the edit.
+      try {
+        await patchHubIndex(Store.mod, kind, Store._cache.get(kind) ?? {})
+      } catch (e) {
+        console.warn(`[pghub] hub-index not updated for ${kind}: ${e.message}`)
       }
     }
   })().finally(() => { Store._inFlight = null })

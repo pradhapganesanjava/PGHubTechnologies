@@ -12,6 +12,7 @@
  * cached after the first hit so browsing a module's items is instant.
  */
 import { readRootJson, readModuleJson } from './drive.js'
+import { indexList } from './hub-index.js'
 import { ready } from './ready.js'
 
 // The page's shim stashed the real fetch before replacing window.fetch.
@@ -44,32 +45,14 @@ async function hubIndex() {
   const mods = await Promise.all(Object.entries(hub.modules ?? {}).map(async ([dir, m]) => {
     const [terms, qa, topics] = await Promise.all(
       ['terms', 'qa', 'topics'].map(t => modData(dir, t)))
-    // Sorted by (group, label) to match what serve_hub.py's build_index
-    // emitted, so the tree reads the same whichever path produced it.
-    const list = (obj, ...keys) => Object.entries(obj)
-      .flatMap(([k, v]) => v && typeof v === 'object'
-        ? [{ id: v.id ?? k, label: label(v, keys), group: v.group ?? '' }] : [])
-      .sort((a, b) => a.group.toLowerCase().localeCompare(b.group.toLowerCase())
-                   || a.label.toLowerCase().localeCompare(b.label.toLowerCase()))
     return {
       dir, title: m.title ?? dir, emoji: m.emoji ?? '',
-      terms:  list(terms, 'title'),
-      qa:     list(qa, 'question', 'title'),
-      topics: list(topics, 'title', 'summary'),
+      terms:  indexList(terms, 'terms'),
+      qa:     indexList(qa, 'qa'),
+      topics: indexList(topics, 'topics'),
     }
   }))
   return _index = { modules: mods }
-}
-
-function label(entry, keys) {
-  for (const k of keys) {
-    const v = entry[k]
-    if (typeof v === 'string' && v.trim()) {
-      const t = v.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-      if (t) return t
-    }
-  }
-  return entry.id ?? ''
 }
 
 async function modData(mod, type) {
