@@ -6,11 +6,23 @@
  * three endpoints serve_hub.py used to answer.
  */
 import * as Settings from './settings.js'
+import { mountThemePicker } from './theme-picker.js'
 import { installHubStore } from './hub.js'
 import { installGate }     from './gate.js'
+import * as Search         from './search.js'
+import { ready }           from './ready.js'
 
 installHubStore()
 installGate({ title: 'PG Hub Technologies', emoji: '🧰' })
+
+// The landing page's inline script owns the Browse pane, so the search module
+// is handed to it rather than reaching into the DOM from here.
+window.__pghubSearch = Search
+
+// Warm the index once there is a session, so the first search is instant. It is
+// fetched in the background; a search issued before it lands simply waits on
+// the same promise.
+ready.then(() => Search.loadIndex().catch(() => { /* surfaced on first search */ }))
 
 // ── shared preferences ──────────────────────────────────────────────────────
 // The page's own applyTheme is a plain function in its inline script, so it is
@@ -19,3 +31,8 @@ installGate({ title: 'PG Hub Technologies', emoji: '🧰' })
 window.__pghubSettings = Settings
 Settings.onThemeChange(t => Settings.withRemote(() => window.applyTheme?.(t)))
 Settings.syncFromDrive().catch(() => { /* the local theme stands */ })
+
+// The theme control. One implementation mounted into every header, rather
+// than the labelled dropdown that was written out eighteen times and free to
+// drift. It calls window.applyTheme, which already owns persistence.
+mountThemePicker(document.getElementById('themeSwatches'))

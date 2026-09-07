@@ -7,6 +7,7 @@
  * stamped in as __pghubModule.
  */
 import * as Settings from './settings.js'
+import { mountThemePicker } from './theme-picker.js'
 import { installStore, flush } from './store.js'
 import { installMedia }        from './media.js'
 import { installGate }         from './gate.js'
@@ -27,3 +28,8 @@ installGate({ title: document.title || 'PG Hub Technologies', emoji: '🧰', onF
 window.__pghubSettings = Settings
 Settings.onThemeChange(t => Settings.withRemote(() => window.applyTheme?.(t)))
 Settings.syncFromDrive().catch(() => { /* the local theme stands */ })
+
+// The theme control. One implementation mounted into every header, rather
+// than the labelled dropdown that was written out eighteen times and free to
+// drift. It calls window.applyTheme, which already owns persistence.
+mountThemePicker(document.getElementById('themeSwatches'))

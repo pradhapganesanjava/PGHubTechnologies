@@ -107,6 +107,11 @@ start.command
 tools/.migration-state.json
 tools/out/
 
+# The layout harness is a built copy of the site with the Drive layer replaced
+# by a stub that has real content baked into it — every term, Q&A and document
+# title. The builder is tracked; what it produces never is.
+tools/mobile/harness/
+
 # ── Housekeeping ─────────────────────────────────────────────────────────────
 .DS_Store
 __pycache__/

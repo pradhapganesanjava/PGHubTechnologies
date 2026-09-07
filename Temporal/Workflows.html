@@ -145,12 +145,51 @@
 
   /* Theme picker */
   .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-  .theme-select {
-    background: var(--panel-2); color: var(--text);
-    border: 1px solid var(--border); border-radius: 8px;
-    padding: 7px 10px; font-size: 13px; font-weight: 600; cursor: pointer; outline: none;
+
+  /* ===== Narrow screens =====
+     The desktop layout is a fixed sidebar beside a flexible main. On a 390px
+     phone that leaves main at a handful of characters, and the header's
+     right-hand cluster — five tabs plus the theme picker — will not wrap, so
+     the document comes out wider than the screen and scrolls sideways.
+
+     Below 860px, the same breakpoint the hub uses, the sidebar stacks above the
+     content at full width instead of competing with it, and the header wraps
+     its controls onto a second row. Stacking rather than overlaying is
+     deliberate: an overlay anchored at top:0 would cover the very button that
+     closes it, and anchoring below a header whose height changes when it wraps
+     is fragile. */
+  @media (max-width: 860px) {
+    header { flex-wrap: wrap; padding: 10px 12px; gap: 8px; }
+    header h1 { font-size: 1.05rem; }
+    .sub { display: none; }                 /* the tagline is on the hub card too */
+
+    /* display:contents dissolves the wrapper so its children become direct flex
+       items of the header. That is what lets the theme picker sit at the end of
+       the title row while the tabs claim a full-width row of their own —
+       otherwise the five tabs share the remainder with the picker and the last
+       two are cut off, reachable only by a horizontal swipe nobody would guess
+       at. */
+    .header-right { display: contents; }
+    .tp { margin-left: auto; flex: 0 0 auto; }
+    /* order pulls the tabs after the picker so the header settles into two rows
+       (title + picker, then tabs) rather than three. Without it the full-width
+       tabs break the line first and the picker is stranded on a row of its own. */
+    .tabs { order: 1; flex: 0 0 100%; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tabs .tab-btn { flex: 1 1 0; min-width: 0; }
+
+    .layout { flex-direction: column; }
+    .layout > aside:not(#drawer) {
+      width: 100%; min-width: 0; max-height: 45vh;
+      border-right: 0; border-bottom: 1px solid var(--border);
+    }
+
+    main { padding: 20px 16px 64px; }
+    .detail, .detail:has(.pdf-view), .sv-head, #search-results, #search-more, .sr-empty { max-width: 100%; }
+    .pdf-frame { height: 70vh; }
+    .boxes { grid-template-columns: 1fr; }
+    .ov-globe { height: 60vh; }
   }
-  .theme-select:focus { border-color: var(--accent); }
 
   .layout { display: flex; flex: 1; min-height: 0; }
   .nav-toggle { height: 34px; }
@@ -224,7 +263,10 @@
   nav.flat .term { padding-left: 14px; }
 
   /* Detail pane (Glossary tab) */
-  main { flex: 1; overflow-y: auto; padding: 36px 48px 80px; }
+  main { flex: 1; overflow-y: auto; padding: 36px 48px 80px; min-width: 0; }
+  /* A wide child — a table, a diagram, a code block — must scroll inside its
+     own box rather than widening the page. */
+  .markdown-body pre, .markdown-body table { max-width: 100%; overflow-x: auto; }
   .detail { max-width: 820px; }
   .crumbs { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
   .tag-chip {
@@ -366,6 +408,27 @@
   .ov-group-title .count { font-size: 11px; color: var(--muted); background: var(--chip); padding: 2px 8px; border-radius: 10px; }
   .ov-group.ov-nested { margin-bottom: 18px; border-left: 2px solid var(--border); padding-left: 14px; }
   .ov-group.ov-nested .ov-group-title .name { font-size: 13.5px; color: var(--muted); }
+  /* Docs landing list. The tab used to jump straight into whichever document
+     sorted first, so there was no way to see what a module actually held. The
+     sidebar lists documents flat — these modules carry no doc tags — so the
+     landing list is flat too, and the two agree. */
+  .docs-index-head { display: flex; align-items: baseline; gap: 10px; margin: 0 0 18px; }
+  .docs-index-head h2 { font-size: 1.15rem; margin: 0; }
+  .docs-index-head .count { color: var(--muted); font-size: .85rem; }
+  .doc-box { text-align: left; }
+  .doc-box .b-title { font-weight: 600; font-size: 14px; line-height: 1.35; }
+  .doc-box .b-kind { font-size: 10px; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--muted); margin-top: 6px; }
+
+  /* Close bar above an open document — a document is something you come back
+     from, so it needs a way out that does not depend on the sidebar. */
+  .doc-back { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .doc-back button { background: var(--panel-2); border: 1px solid var(--border);
+    color: var(--muted); border-radius: 8px; padding: 5px 11px; font-size: 12px;
+    font-family: inherit; font-weight: 600; cursor: pointer; }
+  .doc-back button:hover { color: var(--text); border-color: var(--accent); }
+  .doc-back .doc-close { margin-left: auto; padding: 5px 9px; }
+
   .boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
   .box {
     background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
@@ -531,15 +594,7 @@
         <button class="tab-btn" data-tab="docs">Docs</button>
         <button class="tab-btn" data-tab="search">Search</button>
       </div>
-      <select id="theme" class="theme-select" aria-label="Theme">
-        <option value="dark">🌙 Dark</option>
-        <option value="moonlight">🌌 Moonlight</option>
-        <option value="gray">🌫️ Gray</option>
-        <option value="soft">🪶 Soft</option>
-        <option value="white">☀️ White</option>
-        <option value="colorful">🎨 Colorful</option>
-        <option value="cartoon">🦄 Cartoon</option>
-      </select>
+      <span id="themeSwatches"></span>
     </div>
   </header>
 
@@ -2048,6 +2103,16 @@ function showTab(tab) {
 document.querySelectorAll(".tab-btn").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
 
 /* hamburger toggles the left navigation on/off (remembered) */
+/* On a narrow screen the sidebar sits above the content, so leaving it open
+   after a selection buries the thing just selected. Collapse it — without
+   saving that as a preference, since it is a consequence of the layout rather
+   than something the user asked for. */
+nav.addEventListener("click", e => {
+  if (!e.target.closest(".term")) return;
+  if (!window.matchMedia("(max-width: 860px)").matches) return;
+  layout.classList.add("nav-closed");
+});
+
 document.getElementById("nav-toggle").addEventListener("click", () => {
   const closed = layout.classList.toggle("nav-closed");
   savePref("wfgloss-nav-open", closed ? "0" : "1");
@@ -2702,13 +2767,12 @@ function wrapInlineCode(editor) {
 }
 
 /* ---- Theme picker ---- */
-const themeSel = document.getElementById("theme");
 /* The theme follows the hub. Cookies are keyed by host and ignore the port, so
    one `tech_theme` value is shared by the hub (:8500) and every module — picking
    a theme anywhere moves them all. localStorage stays the standalone fallback
    for running this app on its own (or over file://, where cookies are blocked). */
 const THEME_COOKIE = "tech_theme";
-const THEMES = Array.from(themeSel.options).map(o => o.value);
+const THEMES = ["dark", "moonlight", "gray", "soft", "white", "colorful", "cartoon"];
 function _setCookie(k, v) {
   try { document.cookie = k + "=" + encodeURIComponent(v) + ";path=/;max-age=31536000;SameSite=Lax"; }
   catch (e) {}
@@ -2722,7 +2786,6 @@ function _getCookie(k) {
 function applyTheme(name) {
   if (!THEMES.includes(name)) name = "dark";      // ignore an unknown/stale value
   document.documentElement.setAttribute("data-theme", name);
-  themeSel.value = name;
   try { localStorage.setItem("wfgloss-theme", name); } catch (e) {}
   _setCookie(THEME_COOKIE, name);                 // tell the hub and the other modules
   // Broadcasts to other open pages and mirrors to Drive, once the modules that
@@ -2730,7 +2793,6 @@ function applyTheme(name) {
   // applyTheme, because AgenticAI's also re-renders the open document.
   window.__pghubSettings?.setTheme(name);
 }
-themeSel.addEventListener("change", () => applyTheme(themeSel.value));
 let savedTheme = _getCookie(THEME_COOKIE);        // the hub's choice wins on load
 if (!savedTheme) { try { savedTheme = localStorage.getItem("wfgloss-theme"); } catch (e) {} }
 applyTheme(savedTheme || "dark");
@@ -3358,24 +3420,69 @@ function renderDoc(name) {
   currentDocName = name;
   markActive(name);
   detail.innerHTML = `<div class="markdown-body">${renderMarkdown(doc.markdown)}</div>`;
+  // A document needs a way out that does not depend on the sidebar. Injected
+  // after the body is built, because the six renderDoc variants across these
+  // pages assemble `detail` differently but all end here.
+  detail.insertAdjacentHTML("afterbegin",
+    `<div class="doc-back">` +
+      `<button type="button" data-act="docs-back">\u2190 All documents</button>` +
+      `<button type="button" class="doc-close" data-act="docs-back" title="Close document" aria-label="Close document">\u2715</button>` +
+    `</div>`);
+  detail.querySelectorAll('[data-act="docs-back"]').forEach(b =>
+    b.addEventListener("click", renderDocsIndex));
   history.replaceState(null, "", "#doc/" + encodeURIComponent(name));
   main.scrollTop = 0;
   return true;
 }
 
 /* entry point for the Docs tab (top tab or sidebar tab): show a doc, or a hint if none */
+/* A document's kind, for the card. Some baked entries predate the `type`
+   field, so fall back to the extension rather than mislabelling them. */
+function docKind(d) {
+  const t = d.type || (/\.md$/i.test(d.name) ? "markdown" : /\.pdf$/i.test(d.name) ? "pdf" : "html");
+  return t === "markdown" ? "Markdown" : t === "pdf" ? "PDF" : "Page";
+}
+
+/* One card per document. */
+function docBox(d) {
+  const el = document.createElement("div");
+  el.className = "box doc-box";
+  el.innerHTML = `<div class="b-title">${escapeHtml(d.title || d.name)}</div>` +
+                 `<div class="b-kind">${docKind(d)}</div>`;
+  el.title = d.name;
+  el.addEventListener("click", () => selectDoc(d.name));
+  return el;
+}
+
+/* The Docs landing page: what this module actually holds. */
+function renderDocsIndex() {
+  currentDocName = null;
+  markActive(null);
+  detail.innerHTML = "";
+  if (!DOCS.length) {
+      detail.innerHTML = `<div class="markdown-body"><p style="color:var(--muted)">${SERVER
+        ? "No <code>.md</code> files in the <code>docs/</code> folder yet — drop some in and reload."
+        : "Docs live in Google Drive — sign in to load them."}</p></div>`;
+    history.replaceState(null, "", "#docs");
+    return;
+  }
+  const head = document.createElement("div");
+  head.className = "docs-index-head";
+  head.innerHTML = `<h2>Documents</h2><span class="count">${DOCS.length}</span>`;
+  detail.appendChild(head);
+  const boxes = document.createElement("div");
+  boxes.className = "boxes";
+  DOCS.forEach(d => boxes.appendChild(docBox(d)));
+  detail.appendChild(boxes);
+  history.replaceState(null, "", "#docs");
+  main.scrollTop = 0;
+}
+
 function enterDocs() {
   loadDocs().then(() => {
     setNavSection("docs");
     showDocsPane();
-    if (DOCS.length) {
-      const pick = currentDocName && DOCS.find(d => d.name === currentDocName) ? currentDocName : DOCS[0].name;
-      renderDoc(pick);
-    } else {
-      detail.innerHTML = `<div class="markdown-body"><p style="color:var(--muted)">${SERVER
-        ? "No <code>.md</code> files in the <code>docs/</code> folder yet — drop some in and reload."
-        : "Docs live in Google Drive — sign in to load them."}</p></div>`;
-    }
+    renderDocsIndex();
   });
 }
 
@@ -3456,17 +3563,27 @@ async function boot() {
   rebuildTopicData();
   initFolder();
   // restore sidebar open/closed + tree/flat view
-  if (loadPref("wfgloss-nav-open", "1") === "0") layout.classList.add("nav-closed");
+  // Stacked above the content on a phone, an open sidebar would push the
+  // detail off-screen on arrival, so it starts closed there — but only when
+  // the user has expressed no preference of their own.
+  const navPref = loadPref("wfgloss-nav-open", "");
+  const narrow  = window.matchMedia("(max-width: 860px)").matches;
+  if (navPref === "0" || (navPref === "" && narrow)) layout.classList.add("nav-closed");
   const savedView = loadPref("wfgloss-nav-view", "tree");
   btnTree.classList.toggle("active", savedView === "tree");
   btnFlat.classList.toggle("active", savedView !== "tree");
   renderSidebar(savedView);
   const initial = location.hash.slice(1);
-  if (initial.startsWith("doc/")) {               // deep link to a doc: #doc/<filename>
+  if (initial === "docs") {                       // the Docs landing list
+    await loadDocs();
+    enterDocs();
+  } else if (initial.startsWith("doc/")) {        // deep link to a doc: #doc/<filename>
     const nm = decodeURIComponent(initial.slice(4));
     await loadDocs();
     if (DOCS.find(d => d.name === nm)) selectDoc(nm);
-    else select(GROUPS[0].terms[0].id);
+    // A link to a document since renamed or removed should land on the list it
+    // belongs to, not on an unrelated term.
+    else enterDocs();
   } else if (initial.startsWith("topic/") && TOPIC_INDEX[initial.slice(6)]) {
     selectTopic(initial.slice(6));                // #topic/<id>
     loadDocs();

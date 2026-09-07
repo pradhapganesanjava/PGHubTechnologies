@@ -50,6 +50,36 @@ Two consequences worth knowing:
   100 KB repeatedly. A chip in the corner shows when a save is pending, and
   `Cmd/Ctrl-S` forces one.
 
+### Searching everything from the hub
+
+The landing page searches the full text of every term, Q&A, topic and document
+across all seventeen modules — 1,471 items, 114 of them documents that the hub
+previously could not see at all, because its search filtered only the titles it
+had already rendered.
+
+Shipping that text to the browser is not an option, so `tools/build-search-index.mjs`
+bakes an inverted index — word to the items containing it — into Drive as
+`search-index.json`. Postings are delta-encoded in base 36, which is smaller
+than JSON integers and quicker to parse. It comes to 0.84 MB raw, 0.30 MB
+gzipped. The trade is that results carry no snippet, which is what the hub
+displayed anyway.
+
+Matching follows what people expect mid-keystroke: every word but the last must
+match exactly, the last is a prefix, and all words must be present. A one-letter
+prefix is not expanded past a few hundred vocabulary entries, so typing a single
+character cannot stall the page.
+
+The index is fetched on the first search rather than at page load, so opening
+the hub still costs nothing, and it is warmed in the background once a session
+exists. Rebuild it whenever content changes:
+
+```bash
+node tools/build-search-index.mjs --dry-run   # report + tools/out/, Drive untouched
+node tools/build-search-index.mjs             # upload
+```
+
+It reads from Drive, not from disk, so it runs without a content checkout.
+
 ### Why seventeen pages and not one
 
 The sibling System Design hub collapsed thirteen byte-identical module apps into
@@ -76,7 +106,7 @@ in the sidebar and rendered as nothing.
 |---|---|
 | `index.html` | Landing page — module cards, cross-module tree, browse, preview, practice |
 | `<Module>/<Name>.html` | The seventeen module apps, one per folder |
-| `app/` | The Drive layer: auth, Drive REST, the fetch store, media, sign-in gate |
+| `app/` | The Drive layer: auth, Drive REST, the fetch store, media, sign-in gate, search, theme |
 | `vendor/` | Third-party libraries (mermaid) |
 | `tools/` | Migration and maintenance. Never deployed |
 | `dev.py` | Static file server for local development |
@@ -159,6 +189,39 @@ page cannot draw one.
 
 ---
 
+## On a phone
+
+Below 860px — the same breakpoint the hub uses — the sidebar stacks above the
+content at full width and the header wraps its controls onto a second row.
+Before this, seventeen of the eighteen pages laid out 697–799px wide inside a
+390px viewport and scrolled sideways, with `main` squeezed to 96px.
+
+Verified with `tools/mobile/`, which builds an offline copy of the site with
+only the gate and the Drive layer stubbed, so what gets measured is the real
+stylesheet:
+
+```bash
+node tools/mobile/build-harness.mjs     # → tools/mobile/harness/ (gitignored)
+```
+
+`diag.html` reports each page's document width against the viewport and names
+the outermost elements crossing it; `frame.html?t=<page>` renders one page in an
+exactly-390px iframe, with `&picker=1` to open the theme menu and `&q=<text>` to
+drive the hub's search. The harness bakes real content into its Drive stub, so
+its output is never committed.
+
+## The Docs tab
+
+Opening Docs used to jump straight into whichever document happened to sort
+first, so there was no view of what a module held and no way back to one. It now
+opens a list — every document as a card with its title and kind — and an open
+document carries a bar above it with "← All documents" and a close button. The
+list has its own hash, `#docs`, so a reload stays on it, and a `#doc/` link to
+something since renamed lands on the list rather than on an unrelated term.
+
+The list is flat because these modules carry no document tags; the sidebar lists
+them flat for the same reason, and the two agree.
+
 ## Shared preferences
 
 The theme is chosen once and holds everywhere — the hub, all seventeen modules,
@@ -174,6 +237,14 @@ apply:
 Drive wins only when it is genuinely newer: both sides carry a timestamp, so
 opening a stale tab does not undo a change made elsewhere. Writes are debounced
 and flushed on page hide.
+
+The control itself is one dot — the theme in use — with a caret; the rest appear
+only when asked for, and the colours are the label. It is a single
+implementation, `app/theme-picker.js`, mounted into the hub banner and all
+seventeen module headers, rather than the labelled dropdown that was written out
+eighteen times and free to drift. It follows `data-theme` on the document
+through a MutationObserver rather than the click that caused it, so it stays
+correct when the theme is changed from another tab or pulled from Drive.
 
 ### If the tools stop working with `invalid_grant`
 
