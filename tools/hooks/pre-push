@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Stop a push that would publish private content. Installed by
+# tools/install-hooks.sh. Deliberately a hook rather than CI: a workflow can
+# only tell you about a leak once the content is already on GitHub and, in a
+# public repo, already fetchable by anyone watching.
+exec bash "$(git rev-parse --show-toplevel)/tools/check-public-safe.sh"

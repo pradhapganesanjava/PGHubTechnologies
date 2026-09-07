@@ -1,0 +1,157 @@
+/* Sign-in gate and save indicator — the only UI this layer adds.
+ *
+ * Everything the hub knows lives in one person's Drive, so the page is useless
+ * until a token exists. This renders a full-screen sign-in panel over the app,
+ * removes it once Drive is reachable, and puts it back if the session expires.
+ * It also shows a small status chip, because writes are debounced and a user
+ * who closes a tab deserves to know whether their edit has landed.
+ */
+import { GAuth, loadGIS } from './gauth.js'
+import { installParentAuth } from './parent-auth.js'
+import { markReady } from './ready.js'
+import { rootId }    from './drive.js'
+
+const CSS = `
+.pghub-gate{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;
+  justify-content:center;background:#0f1115;color:#e6e8ee;
+  font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.pghub-gate__card{max-width:27rem;padding:2.25rem 2.5rem;text-align:center}
+.pghub-gate__mark{font-size:2.75rem;line-height:1;margin-bottom:.9rem}
+.pghub-gate h1{margin:0 0 .5rem;font-size:1.3rem;font-weight:650;letter-spacing:-.01em}
+.pghub-gate p{margin:0 0 1.5rem;color:#9aa3b2;font-size:.9rem}
+.pghub-gate button{background:#3b82f6;color:#fff;border:0;border-radius:.5rem;
+  padding:.7rem 1.4rem;font-size:.92rem;font-weight:560;cursor:pointer}
+.pghub-gate button:hover{background:#2f6fe0}
+.pghub-gate button[disabled]{opacity:.55;cursor:progress}
+.pghub-gate__err{margin-top:1.1rem;color:#f2a0a0;font-size:.83rem;
+  white-space:pre-wrap;text-align:left}
+.pghub-chip{position:fixed;right:.85rem;bottom:.85rem;z-index:2147482000;
+  padding:.3rem .7rem;border-radius:999px;font:500 12px/1.4 -apple-system,
+  BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;pointer-events:none;
+  background:#1b1f27;color:#9aa3b2;border:1px solid #2a3039;
+  opacity:0;transition:opacity .18s}
+.pghub-chip[data-show="1"]{opacity:1}
+.pghub-chip[data-state="saving"]{color:#e8c37a}
+.pghub-chip[data-state="error"]{color:#f2a0a0;border-color:#5a2b2b}
+@media(prefers-color-scheme:light){
+  .pghub-gate{background:#f7f8fa;color:#15181e}
+  .pghub-gate p{color:#5b6472}
+  .pghub-chip{background:#fff;color:#5b6472;border-color:#dfe3e9}
+}`
+
+function el(html) {
+  const t = document.createElement('template')
+  t.innerHTML = html.trim()
+  return t.content.firstElementChild
+}
+
+/**
+ * @param onFlush  Optional "save now" callback. The module page passes the
+ *                 store's flush; the landing page is read-only and passes
+ *                 nothing, which also keeps the store out of its bundle.
+ */
+export function installGate({ title = 'PG Hub Technologies', emoji = '🧰', onFlush = null } = {}) {
+  document.head.appendChild(Object.assign(document.createElement('style'), { textContent: CSS }))
+
+  // Start fetching Google Identity Services now so the sign-in click can open
+  // its popup synchronously; see loadGIS.
+  loadGIS().catch(() => { /* surfaced on the first click instead */ })
+
+  const gate = el(`
+    <div class="pghub-gate" role="dialog" aria-modal="true">
+      <div class="pghub-gate__card">
+        <div class="pghub-gate__mark">${emoji}</div>
+        <h1>${title}</h1>
+        <p>This hub reads its content from a private Google Drive folder.
+           Sign in with the account that owns it.</p>
+        <button type="button">Sign in with Google</button>
+        <div class="pghub-gate__err" hidden></div>
+      </div>
+    </div>`)
+  const btn = gate.querySelector('button')
+  const err = gate.querySelector('.pghub-gate__err')
+  document.body.appendChild(gate)
+
+  const chip = el('<div class="pghub-chip" data-state="idle"></div>')
+  document.body.appendChild(chip)
+
+  const fail = e => {
+    err.hidden = false
+    err.textContent = e.message ?? String(e)
+    btn.disabled = false
+    // Signed in, but this account cannot see the content — almost always the
+    // wrong Google account. Drop the token so the next click offers the
+    // account chooser again; otherwise "Try again" just fails identically,
+    // with no way to switch.
+    if (e?.code === 'no-root' || e?.message?.includes("doesn't have access")) {
+      GAuth.signOut()
+      forceChooser = true
+      btn.textContent = 'Sign in with a different account'
+    } else {
+      btn.textContent = 'Try again'
+    }
+  }
+
+  // Set when a sign-in succeeded but the account could not reach the content,
+  // so the next attempt asks which account rather than silently reusing it.
+  let forceChooser = false
+
+  async function enter() {
+    btn.disabled = true
+    btn.textContent = 'Signing in…'
+    err.hidden = true
+    try {
+      if (!GAuth.isSignedIn()) await GAuth.signIn(forceChooser ? 'select_account' : '')
+      forceChooser = false
+      await rootId()                      // fail loudly now, not on first render
+      gate.remove()
+      markReady()
+    } catch (e) { fail(e) }
+  }
+
+  btn.addEventListener('click', enter)
+
+  // A token kept from earlier this session skips the click entirely.
+  if (GAuth.restore()) enter()
+
+  // Framed by PG Hub Tech: it hands down its Google session, so the gate never
+  // asks for a second sign-in. The message lands after this point, hence the
+  // callback rather than another restore() here — and `enter()` is guarded by
+  // isSignedIn(), so a late arrival cannot double sign-in.
+  installParentAuth(() => { if (GAuth.restore()) enter() })
+
+  window.addEventListener('gauth:expired', () => {
+    if (!document.body.contains(gate)) {
+      document.body.appendChild(gate)
+      btn.disabled = false
+      btn.textContent = 'Sign in with Google'
+      err.hidden = false
+      err.textContent = 'Your session expired. Sign in again to keep working — ' +
+                        'nothing you changed has been lost.'
+    }
+  })
+
+  // ── save indicator ─────────────────────────────────────────────────────────
+  let hideTimer
+  const show = (state, text, sticky = false) => {
+    chip.dataset.state = state
+    chip.dataset.show = '1'
+    chip.textContent = text
+    clearTimeout(hideTimer)
+    if (!sticky) hideTimer = setTimeout(() => { chip.dataset.show = '0' }, 1600)
+  }
+  window.addEventListener('pghub:dirty', e =>
+    show('saving', `Saving${e.detail.pending > 1 ? ` (${e.detail.pending})` : ''}…`, true))
+  window.addEventListener('pghub:saved', e => {
+    if (e.detail.pending === 0) show('idle', 'Saved to Drive')
+  })
+  window.addEventListener('pghub:error', e =>
+    show('error', `Save failed — ${e.detail.message}`, true))
+
+  // Manual save is worth exposing; the app has no other "save now".
+  if (onFlush) {
+    document.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); onFlush() }
+    })
+  }
+}
