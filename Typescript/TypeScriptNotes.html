@@ -1396,6 +1396,127 @@ seek("hello", 42);`,
         related: ["type-guards", "type-assertions", "enums", "generics"]
       },
       {
+        id: "tsx",
+        title: "tsx: .tsx Files vs the tsx Runner",
+        lede: "One name, two unrelated things: a file extension you write in, and a CLI that runs TypeScript.",
+        what: `<p><b>tsx</b> means <span style="background:var(--accent-soft);border-radius:3px;padding:1px 5px">two different things</span>. They share a name and nothing else.</p>
+
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0">
+  <div style="flex:1 1 200px;background:rgba(110,168,254,.10);border-left:3px solid #6ea8fe;border-radius:0 8px 8px 0;padding:9px 13px">
+    <code>.tsx</code> &mdash; a <b>file extension</b><br><span style="color:var(--muted);font-size:13px">what you <b>write</b></span>
+  </div>
+  <div style="flex:1 1 200px;background:rgba(167,139,250,.12);border-left:3px solid #a78bfa;border-radius:0 8px 8px 0;padding:9px 13px">
+    <code>tsx</code> &mdash; an <b>npm CLI runner</b><br><span style="color:var(--muted);font-size:13px">how you <b>run</b> it</span>
+  </div>
+</div>
+
+<h4>1 &mdash; the <code>.tsx</code> file extension</h4>
+<p><code>.tsx</code> = <b>TypeScript + JSX</b>.</p>
+<ul>
+  <li><code>.ts</code> &mdash; TypeScript only. It <b>cannot</b> contain JSX markup.</li>
+  <li><code>.tsx</code> &mdash; TypeScript that <b>can</b> contain React / HTML-like markup: <code>&lt;div&gt;</code>, <code>&lt;Button /&gt;</code>.</li>
+</ul>
+<p>A real one: <code>llm-chat-ui/src/components/chat/composer.tsx</code>.</p>
+
+<div style="background:rgba(52,211,153,.10);border-left:3px solid #34d399;border-radius:0 8px 8px 0;padding:10px 14px;margin:12px 0">
+  <span style="display:inline-block;background:#34d399;color:#04231a;font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:2px 7px;border-radius:4px">Key point</span>
+  <p style="margin:6px 0 0">A <code>.tsx</code> file is still <b>source code</b>. It is never what the browser runs. <b>Next.js</b> (or Vite, esbuild&hellip;) <b>transpiles it to JavaScript</b> first.</p>
+</div>
+
+<div style="background:rgba(251,191,36,.12);border-left:3px solid #fbbf24;border-radius:0 8px 8px 0;padding:10px 14px;margin:12px 0">
+  <span style="display:inline-block;background:#fbbf24;color:#2b1d00;font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:2px 7px;border-radius:4px">Gotcha</span>
+  <p style="margin:6px 0 0">You never type a separate <code>tsc</code> command yourself, so it <i>feels</i> like <code>.tsx</code> runs directly. It does not &mdash; <b>JavaScript is still produced</b>, usually in memory or into <code>.next/</code>.</p>
+</div>
+
+<div style="background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px 12px;margin:12px 0;text-align:center;line-height:2.6">
+  <span style="display:inline-block;background:rgba(110,168,254,.18);border:1px solid #6ea8fe;border-radius:6px;padding:3px 9px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px">composer.tsx</span>
+  <span style="color:var(--muted);padding:0 5px">&#8594;</span>
+  <span style="display:inline-block;background:rgba(251,191,36,.18);border:1px solid #fbbf24;border-radius:6px;padding:3px 9px;font-size:12.5px">bundler &mdash; Next.js / Vite / esbuild</span>
+  <span style="color:var(--muted);padding:0 5px">&#8594;</span>
+  <span style="display:inline-block;background:rgba(52,211,153,.18);border:1px solid #34d399;border-radius:6px;padding:3px 9px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px">JavaScript</span>
+  <span style="color:var(--muted);padding:0 5px">&#8594;</span>
+  <span style="display:inline-block;border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:12.5px">browser runs it</span>
+  <div style="color:var(--muted);font-size:12px;margin-top:8px;line-height:1.5">the JavaScript lands in memory or in <code>.next/</code> &mdash; never in your editor</div>
+</div>
+
+<h4>2 &mdash; <code>tsx</code>, the CLI runner</h4>
+<p>An npm package that <b>executes TypeScript</b> with no separate compile step:</p>
+<p><code>npx tsx script.ts</code></p>
+<p>What actually happens:</p>
+<ul>
+  <li>tsx uses <b>esbuild</b> to convert TS &rarr; JS <b>in memory</b>.</li>
+  <li><b>Node runs that JavaScript immediately.</b></li>
+  <li>No <code>dist/</code> folder is written, and <code>tsc</code> never runs.</li>
+</ul>
+
+<div style="background:rgba(52,211,153,.10);border-left:3px solid #34d399;border-radius:0 8px 8px 0;padding:10px 14px;margin:12px 0">
+  <span style="display:inline-block;background:#34d399;color:#04231a;font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:2px 7px;border-radius:4px">Key point</span>
+  <p style="margin:6px 0 0">Nothing is compiled to a <code>.js</code> file <b>on disk</b>. But <span style="background:var(--accent-soft);border-radius:3px;padding:1px 5px">compilation still happens &mdash; just on the fly</span>.</p>
+</div>
+
+<div style="background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px 12px;margin:12px 0;text-align:center;line-height:2.6">
+  <span style="display:inline-block;background:rgba(167,139,250,.18);border:1px solid #a78bfa;border-radius:6px;padding:3px 9px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px">script.ts</span>
+  <span style="color:var(--muted);padding:0 5px">&#8594;</span>
+  <span style="display:inline-block;background:rgba(251,191,36,.18);border:1px solid #fbbf24;border-radius:6px;padding:3px 9px;font-size:12.5px">tsx &mdash; esbuild, in memory</span>
+  <span style="color:var(--muted);padding:0 5px">&#8594;</span>
+  <span style="display:inline-block;background:rgba(52,211,153,.18);border:1px solid #34d399;border-radius:6px;padding:3px 9px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px">JavaScript</span>
+  <span style="color:var(--muted);padding:0 5px">&#8594;</span>
+  <span style="display:inline-block;border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:12.5px">Node runs it</span>
+  <div style="color:var(--muted);font-size:12px;margin-top:8px;line-height:1.5">nothing is written to <code>dist/</code></div>
+</div>
+
+<p>Same idea, different packages: <code>ts-node</code>, and Node's own built-in support via <code>node --experimental-strip-types</code>.</p>
+
+<h4>Side by side</h4>
+<table>
+  <thead><tr><th>Aspect</th><th><code>.tsx</code> &mdash; the extension</th><th><code>tsx</code> &mdash; the CLI</th></tr></thead>
+  <tbody>
+    <tr><td><b>What it is</b></td><td>a <b>file format</b></td><td>a <b>runner</b> (npm package)</td></tr>
+    <tr><td><b>Holds / takes</b></td><td>TypeScript <b>+ JSX</b></td><td>any <code>.ts</code> or <code>.tsx</code> file</td></tr>
+    <tr><td><b>Who compiles it</b></td><td>your <b>bundler</b></td><td><b>esbuild</b>, inside tsx</td></tr>
+    <tr><td><b>Output goes to</b></td><td>memory or <code>.next/</code></td><td>memory only &mdash; <b>no <code>dist/</code></b></td></tr>
+    <tr><td><b>Runs where</b></td><td>the <b>browser</b></td><td><b>Node</b></td></tr>
+    <tr><td><b>Typical use</b></td><td>React components</td><td>scripts, seeds, one-off tasks</td></tr>
+  </tbody>
+</table>
+
+<div style="background:rgba(110,168,254,.10);border-left:3px solid #6ea8fe;border-radius:0 8px 8px 0;padding:10px 14px;margin:12px 0">
+  <span style="display:inline-block;background:#6ea8fe;color:#0b0d13;font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:2px 7px;border-radius:4px">Memory hook</span>
+  <p style="margin:6px 0 0;font-size:16px"><code>.tsx</code> is <b>what</b> you write. <code>tsx</code> is <b>how</b> you run it.</p>
+</div>`,
+        why: "Both spellings hide the same fact, and that is where the confusion starts: <b>TypeScript never runs anywhere</b>. A <code>.tsx</code> component reaches the browser only after a bundler has erased its types and turned its JSX into function calls, and <code>npx tsx</code> only feels compiler-free because esbuild does the work in memory. Knowing which <code>tsx</code> someone means tells you where to look when it breaks &mdash; a JSX error is a bundler or <code>tsconfig</code> problem, while a <code>npx tsx</code> failure is a Node resolution problem.",
+        apply: [
+          "Name a file <code>.tsx</code> <b>only</b> when it actually contains JSX; plain logic and types belong in <code>.ts</code>.",
+          "Set <code>\"jsx\": \"react-jsx\"</code> in <code>tsconfig.json</code> so <code>.tsx</code> compiles without importing React in every file.",
+          "Reach for <code>npx tsx</code> for seeds, migrations and one-off scripts &mdash; it skips the <code>tsc</code> + <code>node dist/</code> round trip.",
+          "Remember that <code>tsx</code> the runner <b>strips types without checking them</b>; keep <code>tsc --noEmit</code> in CI, because a fast run is not a type-checked one.",
+          "When you cannot find the JavaScript, stop looking &mdash; for a bundler it is in memory or <code>.next/</code>, and for <code>tsx</code> it is never written at all."
+        ],
+        code: `// ---- 1. the .tsx EXTENSION: JSX only compiles in a .tsx file ----
+// llm-chat-ui/src/components/chat/composer.tsx
+function Hello({ name }: { name: string }) {
+  return <h1>Hello {name}</h1>;   // a .ts file cannot contain this
+}
+
+// The bundler erases the type and rewrites the JSX to plain JavaScript:
+//   function Hello({ name }) {
+//     return _jsx("h1", { children: ["Hello ", name] });
+//   }
+// You never see that file - it lives in memory, or under .next/
+
+
+// ---- 2. the tsx CLI: run TypeScript without emitting anything ----
+// $ npx tsx scripts/seed.ts
+//   esbuild compiles TS -> JS in memory, Node runs it, no dist/ is created.
+
+// The slow, explicit equivalent - same result, two steps and a folder:
+// $ tsc && node dist/scripts/seed.js
+
+// Type checking is NOT part of npx tsx, so keep this in CI:
+// $ tsc --noEmit`,
+        related: ["type-erasure", "tsconfig", "modules", "declaration-files", "type-only-imports"]
+      },
+      {
         id: "modules",
         title: "Modules: ESM & CommonJS",
         lede: "A file with a top-level import or export is a module; without one, it is a global script.",
