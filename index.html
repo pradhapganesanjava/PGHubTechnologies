@@ -57,7 +57,8 @@
 
   /* ===== Top header banner (title + tagline, two lines) ===== */
   #topbanner{flex:0 0 auto;background:var(--panel);border-bottom:1px solid var(--border);
-    padding:8px 18px;display:flex;align-items:baseline;justify-content:center;gap:9px;white-space:nowrap;overflow:hidden}
+    padding:8px 18px;display:flex;align-items:center;justify-content:center;gap:9px;white-space:nowrap;
+    position:relative;z-index:50}
   #topbanner .tb-title{font-size:1.02rem;font-weight:700;letter-spacing:-0.01em;flex:0 0 auto}
   #topbanner .tb-sep{color:var(--muted);flex:0 0 auto}
   #topbanner .tb-tagline{color:var(--muted);font-size:.82rem;margin:0;flex:0 1 auto;min-width:0;
@@ -127,21 +128,36 @@
   body:not(.nav-on) #sb-resize{display:none}
   #content{flex:1;min-width:0;height:100%;overflow-y:auto;
     background:radial-gradient(1200px 620px at 50% -12%, var(--panel-2) 0%, var(--bg) 62%)}
-  .wrap{max-width:1080px;margin:0 auto;padding:36px 26px 90px}
-  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .wrap{max-width:1080px;margin:0 auto;padding:18px 26px 90px}
+  /* One compact row under the header. It used to be three stacked blocks — the
+     nav toggle, then the search box, then view + theme + reload + status —
+     which on a narrow window wrapped into five separate lines before any
+     content appeared. */
+  .toolbar{display:flex;align-items:center;gap:10px;margin:0 0 20px;flex-wrap:wrap}
+  /* min-width:0 because a flex item defaults to min-width:auto, which for a
+     text input is its intrinsic width — without it the box refuses to shrink
+     and pushes the status onto a line of its own. It still grows to fill on a
+     wide window.
+
+     The 150px basis is what keeps everything on one line at 1024px, the width
+     at which the sidebar is still open: the other four children and their gaps
+     take 486px of a 646px row, leaving 160px, so a 180px basis overshot by
+     20px and that was enough to wrap the status onto a line of its own. */
+  .toolbar .search-wrap{flex:1 1 150px;min-width:0;max-width:none}
+  .toolbar .status{margin-left:auto;white-space:nowrap}
+  .tb-themes{display:flex;align-items:center;flex:0 0 auto;margin-left:10px}
+  .iconbtn.sm{width:34px;height:34px;font-size:.92rem}
   .iconbtn{background:var(--panel-2);border:1px solid var(--border);color:var(--text);
     width:38px;height:38px;border-radius:9px;font-size:1.05rem;cursor:pointer;flex:0 0 auto}
   .iconbtn:hover{border-color:var(--accent)}
   .hero{text-align:center;margin:10px 0 2px}
   .hero h1{font-size:clamp(1.8rem,4.5vw,2.8rem);margin:0 0 10px;letter-spacing:-0.02em}
   .hero p{color:var(--muted);font-size:1.02rem;max-width:64ch;margin:0 auto}
-  .searchrow{display:flex;justify-content:center;margin:22px 0 6px}
   .search-wrap{position:relative;width:100%;max-width:560px}
   #mainSearch{width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);
     border-radius:11px;padding:12px 14px 12px 40px;font-size:.95rem;font-family:inherit}
   #mainSearch:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
   .search-wrap .mag{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
-  .bar{display:flex;align-items:center;justify-content:center;gap:10px;margin:12px 0 6px;flex-wrap:wrap}
   .seg{display:inline-flex;background:var(--panel-2);border:1px solid var(--border);border-radius:9px;overflow:hidden}
   .seg button{background:transparent;border:0;color:var(--muted);padding:7px 13px;font-size:.85rem;
     cursor:pointer;font-family:inherit}
@@ -242,6 +258,20 @@
   .modal-foot a:hover{border-color:var(--accent)}
 
   .scrim{display:none}
+  .seg button .i{margin-right:5px}
+
+  /* Phones: the row still needs two lines, but only two. The view switcher
+     drops to its icons — the label stays in the title and aria-label — which is
+     what lets the reload button and the status join it. The tagline goes with
+     them; a lone separator dot is not worth a header slot. */
+  @media(max-width:560px){
+    #topbanner .tb-sep,#topbanner .tb-tagline{display:none}
+    .seg button .l{display:none}
+    .seg button .i{margin-right:0}
+    .seg button{padding:7px 12px;font-size:1rem}
+    .toolbar{gap:8px}
+  }
+
   @media(max-width:860px){
     #sidebar{position:fixed;z-index:60;box-shadow:0 0 40px rgba(0,0,0,.5)}
     #sb-resize{display:none}
@@ -324,6 +354,7 @@
   <span class="tb-title">🧭 Tech Hub</span>
   <span class="tb-sep">·</span>
   <span class="tb-tagline" id="tagline">Every _Tech study app — languages, frameworks, architecture, APIs, AI engineering — one launcher, each module its own app.</span>
+  <div class="tb-themes" id="themeSwatches" role="group" aria-label="Theme"></div>
 </header>
 <div id="appbody">
 <aside id="sidebar">
@@ -352,25 +383,18 @@
 
 <div id="content">
   <main class="wrap">
-    <div class="topbar">
+    <div class="toolbar">
       <button class="iconbtn" id="navToggle" title="Show / hide contents" aria-label="Toggle contents">☰</button>
-    </div>
-
-    <div class="searchrow">
       <div class="search-wrap">
         <span class="mag">🔎</span>
         <input id="mainSearch" type="search" placeholder="Search everything — terms, Q&amp;A, topics, documents…" autocomplete="off">
       </div>
-    </div>
-
-    <div class="bar">
       <div class="seg" id="viewSeg">
-        <button data-view="modules" class="active">🧩 Modules</button>
-        <button data-view="browse">📇 Browse all</button>
-        <button data-view="practice">🎯 Practice</button>
+        <button data-view="modules" class="active" title="Modules"><span class="i">🧩</span><span class="l">Modules</span></button>
+        <button data-view="browse" title="Browse all"><span class="i">📇</span><span class="l">Browse all</span></button>
+        <button data-view="practice" title="Practice"><span class="i">🎯</span><span class="l">Practice</span></button>
       </div>
-      <span id="themeSwatches"></span>
-      <button class="mini" id="refresh">🔄 Reload</button>
+      <button class="iconbtn sm" id="refresh" title="Reload modules" aria-label="Reload modules">🔄</button>
       <span class="status" id="status">loading…</span>
     </div>
 
@@ -757,7 +781,9 @@ function setView(v){
   pv.style.display = isPractice ? "" : "none";
   pv.hidden = !isPractice;
   document.getElementById("hubFootnote").style.display = isPractice ? "none" : "";
-  document.querySelector(".searchrow").style.display = isPractice ? "none" : "";
+  // Practice has nothing to search, so the box goes; the rest of the row (view
+  // switcher, status) stays, since that is how you leave Practice again.
+  document.querySelector(".toolbar .search-wrap").style.display = isPractice ? "none" : "";
   document.querySelectorAll("#viewSeg button").forEach(b => b.classList.toggle("active", b.dataset.view === v));
   if (isPractice) startPractice();
 }

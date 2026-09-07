@@ -221,6 +221,23 @@ exactly-390px iframe, with `&picker=1` to open the theme menu and `&q=<text>` to
 drive the hub's search. The harness bakes real content into its Drive stub, so
 its output is never committed.
 
+## The hub's control row
+
+The hub opened with three stacked blocks before any content — the nav toggle,
+then the search box, then the view switcher with the theme control, reload and
+status — which on a narrow window wrapped into five separate lines. They are now
+one row directly beneath the header: reload became an icon, and the theme
+control moved into the header entirely.
+
+Row counts, measured rather than assumed: one row at 1440, 1280, 1024, 768 and
+560px; two at 900px and 390px. 900px wraps because the sidebar is still open
+there and leaves the content column 528px, which no arrangement of these
+controls fits into. 1024px needed the search box's flex-basis dropped from 180px
+to 150px — the other four children and their gaps take 486px of a 646px row,
+leaving 160px, so 180px overshot by 20px and that was enough to push the status
+onto its own line. On phones the view switcher drops to its icons, which is what
+gets reload and the status onto the same line.
+
 ## The Docs tab
 
 Opening Docs used to jump straight into whichever document happened to sort
@@ -249,8 +266,10 @@ Drive wins only when it is genuinely newer: both sides carry a timestamp, so
 opening a stale tab does not undo a change made elsewhere. Writes are debounced
 and flushed on page hide.
 
-The control itself is one dot — the theme in use — with a caret; the rest appear
-only when asked for, and the colours are the label. It is a single
+The control sits at the right of the hub's header, out of the control row —
+as a labelled dropdown it was the widest thing in that row and the reason the
+rest could not fit beside it. It is one dot — the theme in use — with a caret;
+the rest appear only when asked for, and the colours are the label. It is a single
 implementation, `app/theme-picker.js`, mounted into the hub banner and all
 seventeen module headers, rather than the labelled dropdown that was written out
 eighteen times and free to drift. It follows `data-theme` on the document
