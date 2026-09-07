@@ -1484,7 +1484,7 @@ seek("hello", 42);`,
   <span style="display:inline-block;background:#6ea8fe;color:#0b0d13;font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:2px 7px;border-radius:4px">Memory hook</span>
   <p style="margin:6px 0 0;font-size:16px"><code>.tsx</code> is <b>what</b> you write. <code>tsx</code> is <b>how</b> you run it.</p>
 </div>`,
-        why: "Both spellings hide the same fact, and that is where the confusion starts: <b>TypeScript never runs anywhere</b>. A <code>.tsx</code> component reaches the browser only after a bundler has erased its types and turned its JSX into function calls, and <code>npx tsx</code> only feels compiler-free because esbuild does the work in memory. Knowing which <code>tsx</code> someone means tells you where to look when it breaks &mdash; a JSX error is a bundler or <code>tsconfig</code> problem, while a <code>npx tsx</code> failure is a Node resolution problem.",
+        why: `<p><b>TypeScript never runs anywhere.</b> Both spellings hide that &mdash; which is exactly where the confusion starts.</p><ul><li>A <code>.tsx</code> component reaches the browser <b>only after a bundler</b> has erased its types and rewritten its JSX as function calls.</li><li><code>npx tsx</code> only <i>feels</i> compiler-free. <b>esbuild still compiles it</b> &mdash; just in memory.</li><li>Knowing <b>which <code>tsx</code></b> someone means tells you <b>where to look when it breaks</b>:<ul><li>a <b>JSX error</b> &rarr; a bundler or <code>tsconfig</code> problem;</li><li>an <code>npx tsx</code> <b>failure</b> &rarr; a Node resolution problem.</li></ul></li></ul>`,
         apply: [
           "Name a file <code>.tsx</code> <b>only</b> when it actually contains JSX; plain logic and types belong in <code>.ts</code>.",
           "Set <code>\"jsx\": \"react-jsx\"</code> in <code>tsconfig.json</code> so <code>.tsx</code> compiles without importing React in every file.",
@@ -1684,7 +1684,7 @@ function detailHTML(t, withTag) {
       ${!t.builtin ? `<button class="note-action danger" data-act="delete-term">&#128465; Delete</button>` : ""}
     </div>
     ${t.what ? `<div class="section"><h3>${t.builtin ? "What it is" : "Details"}</h3><div class="rich">${t.what}</div></div>` : ""}
-    ${t.why ? `<div class="section"><h3>Why it matters</h3><p>${t.why}</p></div>` : ""}
+    ${t.why ? `<div class="section"><h3>Why it matters</h3><div class="rich">${t.why}</div></div>` : ""}
     ${t.apply && t.apply.length ? `<div class="section"><h3>How to apply</h3><ul>${t.apply.map(a => `<li>${a}</li>`).join("")}</ul></div>` : ""}
     ${t.code ? `<div class="section"><h3>Example</h3><pre><code>${escapeHtml(t.code)}</code></pre></div>` : ""}
     ${notesSectionHTML()}

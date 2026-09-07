@@ -11,6 +11,7 @@
  *   node tools/seed-term.mjs Typescript --dry-run
  *   node tools/seed-term.mjs Typescript
  *   node tools/seed-term.mjs Typescript --only tsx
+ *   node tools/seed-term.mjs Typescript --only tsx --update   # rewrite an existing one
  */
 import { readFile, readdir } from 'node:fs/promises'
 import { dirname, join }     from 'node:path'
@@ -24,10 +25,14 @@ const REPO  = join(__dir, '..')
 
 const argv   = process.argv.slice(2)
 const DRY    = argv.includes('--dry-run')
+const UPDATE = argv.includes('--update')
 const onlyAt = argv.indexOf('--only')
 const ONLY   = onlyAt >= 0 ? argv[onlyAt + 1] : null
 const mod    = argv.find(a => !a.startsWith('--') && a !== ONLY)
-if (!mod) { console.error('usage: node tools/seed-term.mjs <Module> [--only <id>] [--dry-run]'); process.exit(1) }
+if (!mod) {
+  console.error('usage: node tools/seed-term.mjs <Module> [--only <id>] [--update] [--dry-run]')
+  process.exit(1)
+}
 
 /* ── the app's BUILTIN_GROUPS, read straight out of the module's notes page ── */
 async function builtinSeed(moduleDir) {
@@ -86,13 +91,35 @@ const r = await withRetry('download', () =>
 let store = typeof r.data === 'string' ? JSON.parse(r.data) : r.data
 console.log(`  Drive terms.json: ${Object.keys(store).length} terms (id ${file.id})`)
 
-const missing = Object.keys(seed).filter(id => !(id in store) && (!ONLY || id === ONLY))
-if (!missing.length) { console.log('\n  Nothing to seed — Drive already has every authored term.'); process.exit(0) }
+const pick    = id => !ONLY || id === ONLY
+const missing = Object.keys(seed).filter(id => !(id in store) && pick(id))
+
+/* Drive is the source of truth: a term may have been edited in the app since it
+ * was seeded, and re-authoring it here would silently throw that away. So an id
+ * that already exists is only rewritten when --update asks for it, and the
+ * fields being overwritten are named first. */
+const stale = !UPDATE ? [] : Object.keys(seed).filter(id => id in store && pick(id)
+  && Object.keys(seed[id]).some(k =>
+       JSON.stringify(seed[id][k]) !== JSON.stringify(store[id][k])))
+
+if (!missing.length && !stale.length) {
+  const why = UPDATE ? 'already matches the authored terms' : 'already has every authored term'
+  console.log(`\n  Nothing to do — Drive ${why}.`)
+  if (!UPDATE) console.log('  (pass --update to rewrite terms whose authored content has changed)')
+  process.exit(0)
+}
 
 for (const id of missing) {
   store = insertInOrder(store, seed, id)
   const at = Object.keys(store).indexOf(id)
   console.log(`  + ${id}  "${seed[id].title}"  [${seed[id].group}] → position ${at + 1}/${Object.keys(store).length}`)
+}
+
+for (const id of stale) {
+  const changed = Object.keys(seed[id]).filter(k =>
+    JSON.stringify(seed[id][k]) !== JSON.stringify(store[id][k]))
+  store[id] = seed[id]                        // in place — key order is preserved
+  console.log(`  ~ ${id}  "${seed[id].title}"  overwriting: ${changed.join(', ')}`)
 }
 
 if (DRY) { console.log('\n  --dry-run: Drive not written.'); process.exit(0) }

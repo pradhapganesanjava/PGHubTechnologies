@@ -841,12 +841,19 @@ function pickPracticeItem(){
   return pick;
 }
 
+/* `apply` is a list of steps. Interpolating the array itself renders it as
+   "a,b,c" — its toString — which is what the hub showed for every term. */
+function applyHTML(a){
+  if (Array.isArray(a)) return `<ul>${a.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+  return `<div>${a}</div>`;
+}
+
 function practiceTermBody(e){
   let h = "";
   if (e.lede) h += `<p class="lede">${e.lede}</p>`;
   if (e.what) h += `<h4>What</h4><div>${e.what}</div>`;
   if (e.why)  h += `<h4>Why</h4><div>${e.why}</div>`;
-  if (e.apply)h += `<h4>How to apply</h4><div>${e.apply}</div>`;
+  if (e.apply)h += `<h4>How to apply</h4>${applyHTML(e.apply)}`;
   if (e.code) h += `<h4>Code</h4><pre><code>${esc(e.code)}</code></pre>`;
   if (Array.isArray(e.related) && e.related.length)
     h += `<h4>Related</h4><div class="rel">${e.related.map(r=>`<span class="p">${esc(r)}</span>`).join("")}</div>`;
@@ -989,7 +996,7 @@ function renderEntry(type, e){
   if (e.lede) h += `<p class="lede">${e.lede}</p>`;
   if (e.what) h += `<h4>What</h4><div>${e.what}</div>`;
   if (e.why)  h += `<h4>Why</h4><div>${e.why}</div>`;
-  if (e.apply)h += `<h4>How to apply</h4><div>${e.apply}</div>`;
+  if (e.apply)h += `<h4>How to apply</h4>${applyHTML(e.apply)}`;
   if (e.code) h += `<h4>Code</h4><pre><code>${esc(e.code)}</code></pre>`;
   if (Array.isArray(e.related) && e.related.length)
     h += `<h4>Related</h4><div class="rel">${e.related.map(r=>`<span class="p">${esc(r)}</span>`).join("")}</div>`;
