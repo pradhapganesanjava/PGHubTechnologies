@@ -8,9 +8,17 @@
  * it under OUR key in OUR shape, and the gate's existing restore() path takes
  * it from there. No second sign-in, no second consent screen.
  *
+ * It writes through gauth's store, so a handed-down session reaches BOTH
+ * storage areas exactly like one from our own sign-in button. That matters
+ * twice over: sessionStorage alone would confine the session to the frame's
+ * tab — the very per-tab sign-in localStorage was adopted to end — and the
+ * localStorage write fires a storage event in every other open tab, which
+ * GAuth.listen picks up, so tabs parked on the gate come in without a reload.
+ *
  * Standalone (not framed) this module does nothing at all.
  */
 import { Config } from './config.js'
+import { store }  from './gauth.js'
 
 // Only ever talk to the host, and only ever trust a message from it. A '*'
 // target or a missing origin check here would hand a Drive token to whatever
@@ -37,12 +45,14 @@ export function installParentAuth(onAuth) {
     const d = e.data
     if (!d || d.type !== 'pghubtech:auth' || !d.token || !d.expires) return
     try {
-      sessionStorage.setItem(
+      store.set(
         Config.ns + 'tok',
         JSON.stringify({ token: d.token, expires: d.expires }),
       )
-      if (d.user) sessionStorage.setItem(Config.ns + 'usr', JSON.stringify(d.user))
-    } catch { return }        // storage blocked — the gate stays as the fallback
+      if (d.user) store.set(Config.ns + 'usr', JSON.stringify(d.user))
+      // store.set swallows a blocked area on its own and onAuth re-reads
+      // storage, so a write that lands nowhere simply leaves the gate up.
+    } catch { return }
     try { onAuth?.() } catch { /* caller's problem, not ours */ }
   })
 

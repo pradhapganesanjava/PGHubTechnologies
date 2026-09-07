@@ -27,12 +27,16 @@ const USR_KEY = 'usr'
  * change is not thrown away, and still written so a tab that has localStorage
  * blocked (private windows, some enterprise policies) keeps working as before.
  */
-const store = {
+export const store = {
   /* Both areas are read and the FRESHER entry wins, rather than localStorage
-     simply taking precedence: parent-auth.js writes a handed-down session to
+     simply taking precedence: a session written before this change lives in
      sessionStorage only, and a stale localStorage token left from an earlier
      sign-in would otherwise shadow it — and then be cleared as expired,
-     taking the good one with it. */
+     taking the good one with it.
+
+     Exported because parent-auth.js writes through it too: a session handed
+     down by the framing host has to land in both areas the same way one from
+     our own sign-in does, or it stays trapped in the frame's tab. */
   get(k) {
     const raw = [null, null]
     try { raw[0] = localStorage.getItem(k) } catch {}
