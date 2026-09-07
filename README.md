@@ -64,6 +64,15 @@ than JSON integers and quicker to parse. It comes to 0.84 MB raw, 0.30 MB
 gzipped. The trade is that results carry no snippet, which is what the hub
 displayed anyway.
 
+Labels are decoded before they are indexed. These fields hold HTML, so they
+carry character references — a Q&A question reads `List&lt;String&gt;`, a
+document title `Agentic AI &mdash; Interview Q&amp;A`. The module page renders
+them as HTML and they come out right there, but the index stores plain text and
+the hub escapes it again for display, so leaving them encoded showed `&lt;` to
+the reader and filed `lt`, `gt` and `mdash` in the vocabulary as if they were
+words. Tags are stripped *before* decoding: the other order turns
+`&lt;T extends U&gt;` into a tag and deletes it.
+
 Matching follows what people expect mid-keystroke: every word but the last must
 match exactly, the last is a prefix, and all words must be present. A one-letter
 prefix is not expanded past a few hundred vocabulary entries, so typing a single

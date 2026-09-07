@@ -41,7 +41,28 @@ const MAX_TOKEN = 24
 const TYPES = { terms: 0, qa: 1, topics: 2, doc: 3 }
 const FILES = [['terms', 'terms.json'], ['qa', 'qa.json'], ['topics', 'topics.json']]
 
-const strip = s => String(s ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+/* These fields hold HTML, so they carry character references: a Q&A question
+   reads "List&lt;String&gt;" or "guarantee &mdash; and what it does NOT". The
+   module page renders them as HTML and they come out right there; the index
+   stores plain text, and the hub escapes it again for display, so leaving them
+   encoded shows "&lt;" to the reader and files "lt", "gt" and "mdash" in the
+   vocabulary as if they were words. */
+const ENTS = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ',
+  mdash: '—', ndash: '–', hellip: '…', middot: '·', bull: '•',
+  lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”',
+  times: '×', divide: '÷', deg: '°', plusmn: '±', ne: '≠', le: '≤', ge: '≥',
+  rarr: '→', larr: '←', harr: '↔', copy: '©', reg: '®', trade: '™',
+}
+const decode = s => String(s)
+  .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+  .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(+d))
+  .replace(/&([a-z][a-z0-9]*);/gi, (m, n) => ENTS[n.toLowerCase()] ?? m)
+
+/* Tags are stripped BEFORE decoding, deliberately. Decoding first would turn
+   "&lt;T extends U&gt;" into "<T extends U>", which the tag-stripper would then
+   delete outright — losing the very text the question is about. */
+const strip = s => decode(String(s ?? '').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim()
 
 /** First non-empty of the given fields, stripped — the item's display label. */
 function labelOf(entry, keys) {
