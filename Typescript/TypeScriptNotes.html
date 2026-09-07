@@ -1486,11 +1486,11 @@ seek("hello", 42);`,
 </div>`,
         why: `<p><b>TypeScript never runs anywhere.</b> Both spellings hide that &mdash; which is exactly where the confusion starts.</p><ul><li>A <code>.tsx</code> component reaches the browser <b>only after a bundler</b> has erased its types and rewritten its JSX as function calls.</li><li><code>npx tsx</code> only <i>feels</i> compiler-free. <b>esbuild still compiles it</b> &mdash; just in memory.</li><li>Knowing <b>which <code>tsx</code></b> someone means tells you <b>where to look when it breaks</b>:<ul><li>a <b>JSX error</b> &rarr; a bundler or <code>tsconfig</code> problem;</li><li>an <code>npx tsx</code> <b>failure</b> &rarr; a Node resolution problem.</li></ul></li></ul>`,
         apply: [
-          "Name a file <code>.tsx</code> <b>only</b> when it actually contains JSX; plain logic and types belong in <code>.ts</code>.",
-          "Set <code>\"jsx\": \"react-jsx\"</code> in <code>tsconfig.json</code> so <code>.tsx</code> compiles without importing React in every file.",
-          "Reach for <code>npx tsx</code> for seeds, migrations and one-off scripts &mdash; it skips the <code>tsc</code> + <code>node dist/</code> round trip.",
-          "Remember that <code>tsx</code> the runner <b>strips types without checking them</b>; keep <code>tsc --noEmit</code> in CI, because a fast run is not a type-checked one.",
-          "When you cannot find the JavaScript, stop looking &mdash; for a bundler it is in memory or <code>.next/</code>, and for <code>tsx</code> it is never written at all."
+          "<b>Name a file <code>.tsx</code> only if it holds JSX.</b> Plain logic and types stay in <code>.ts</code>.",
+          "<b>Set <code>\"jsx\": \"react-jsx\"</code> in <code>tsconfig.json</code>.</b> Then <code>.tsx</code> compiles without importing React in every file.",
+          "<b>Use <code>npx tsx</code> for scripts</b> &mdash; seeds, migrations, one-offs. It skips the <code>tsc</code> + <code>node dist/</code> round trip.",
+          "<b><code>tsx</code> strips types. It does not check them.</b> Keep <code>tsc --noEmit</code> in CI &mdash; a fast run is not a type-checked one.",
+          "<b>Cannot find the JavaScript? Stop looking.</b> A bundler keeps it in memory or <code>.next/</code>; <code>tsx</code> never writes it at all."
         ],
         code: `// ---- 1. the .tsx EXTENSION: JSX only compiles in a .tsx file ----
 // llm-chat-ui/src/components/chat/composer.tsx
@@ -3106,7 +3106,8 @@ function fieldsOf(item, type) {
   if (type === "Term") {
     f.push(["Title", item.title], ["Summary", item.lede || ""],
            [item.builtin ? "What it is" : "Details", stripHtml(item.what || "")],
-           ["Why", item.why || ""], ["How to apply", (item.apply || []).join("  •  ")],
+           ["Why", stripHtml(item.why || "")],
+           ["How to apply", (item.apply || []).map(stripHtml).join("  •  ")],
            ["Example", item.code || ""]);
   } else if (type === "Topic") {
     f.push(["Title", item.title], ["Summary", item.summary || ""],
