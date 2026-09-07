@@ -173,6 +173,17 @@ restored from git history or from Drive.
 walks every file individually and refuses unless each one has a Drive id that
 still resolves.
 
+**The local content has now been deleted** — 274 files, 54.5 MB, after that
+check passed with 60 sampled Drive ids resolving and none trashed. Drive is the
+only copy: this content was never tracked in git, so git history is not a
+fallback for it. What deliberately stayed behind is `server.py`, `start.command`
+and `serve_hub.py`, which the migration skipped and which are therefore in
+neither git nor Drive.
+
+A copy of `hub.json` is kept at `tools/out/hub.json` (gitignored) so the mobile
+harness still builds; the other tools need their content restored from Drive
+before they will run again.
+
 ---
 
 ## Adding a document

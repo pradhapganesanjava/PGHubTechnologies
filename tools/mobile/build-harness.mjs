@@ -22,7 +22,10 @@ const __dir = dirname(fileURLToPath(import.meta.url))
 const REPO  = join(__dir, '..', '..')
 const OUT   = join(__dir, 'harness')
 
-const hub  = JSON.parse(await readFile(join(REPO, 'hub.json'), 'utf8'))
+// hub.json is content and lives in Drive; once the local content tree is
+// deleted the copy under tools/out/ is what keeps this buildable.
+const hub  = JSON.parse(await readFile(join(REPO, 'hub.json'), 'utf8')
+  .catch(() => readFile(join(__dir, '..', 'out', 'hub.json'), 'utf8')))
 // The real search index if one has been baked, so the hub's search can be
 // exercised against actual content rather than a fixture.
 const search = await readFile(join(__dir, '..', 'out', 'search-index.json'), 'utf8')
@@ -118,7 +121,7 @@ export function clearIdCache() {}
 await rm(OUT, { recursive: true, force: true })
 await mkdir(join(OUT, 'app'), { recursive: true })
 await cp(join(REPO, 'index.html'), join(OUT, 'index.html'))
-await cp(join(REPO, 'hub.json'),   join(OUT, 'hub.json'))
+await writeFile(join(OUT, 'hub.json'), JSON.stringify(hub))   // may no longer exist on disk
 for (const d of mods) {
   await mkdir(join(OUT, d), { recursive: true })
   await cp(join(REPO, pageOf(d)), join(OUT, pageOf(d)))
