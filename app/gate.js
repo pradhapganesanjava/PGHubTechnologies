@@ -120,6 +120,11 @@ export function installGate({ title = 'PG Hub Technologies', emoji = '🧰', onF
   // isSignedIn(), so a late arrival cannot double sign-in.
   installParentAuth(() => { if (GAuth.restore()) enter() })
 
+  // Signed in from another tab or window: adopt that session here rather than
+  // leaving this page sitting on the gate until it is reloaded. Guarded by
+  // isSignedIn() inside listen(), so it cannot fire a second sign-in.
+  GAuth.listen(enter)
+
   window.addEventListener('gauth:expired', () => {
     if (!document.body.contains(gate)) {
       document.body.appendChild(gate)

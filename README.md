@@ -250,6 +250,37 @@ something since renamed lands on the list rather than on an unrelated term.
 The list is flat because these modules carry no document tags; the sidebar lists
 them flat for the same reason, and the two agree.
 
+## Signing in once
+
+The token used to live in `sessionStorage`, which is per-tab. Navigating from
+the hub to a module in the same tab carried it, but opening a module in a *new*
+tab, or a second window, or coming back after a browser restart, asked for a
+second sign-in.
+
+It now lives in `localStorage`, so one sign-in covers every tab and window and
+survives a restart, and a `BroadcastChannel` announces it so a tab already
+sitting on the gate comes in without being reloaded. `sessionStorage` is still
+read (a session started before this change is not thrown away, and a
+handed-down one from `parent-auth.js` lands there) and still written, so a
+browser with `localStorage` blocked behaves as it did before. When both hold a
+token the fresher one wins, rather than letting a stale entry shadow a good one.
+
+The trade, stated plainly: a Drive **access** token now touches disk for up to
+its one-hour lifetime, where before it died with the tab. It is not a refresh
+token — it cannot be renewed — and it carries only the two Drive scopes in
+`app/config.js`. Signing out clears both storage areas and tells the other tabs.
+
+### What this does not cover
+
+Signing in to the separate **PG Hub Tech** launcher at
+`pradhapganesanjava.github.io/pghubtech/` still does not sign you in here, even
+though GitHub Pages serves both from the same origin and the storage is
+therefore shared. The two apps namespace their keys differently (`pghtech_`
+there, `pghubtechs_` here), so the storage being shared is not enough on its
+own. `app/parent-auth.js` is the receiving half of a handshake for that — it
+takes a token the host posts and writes it under our key — but nothing sends
+one, and it only listens when this app is framed.
+
 ## Shared preferences
 
 The theme is chosen once and holds everywhere — the hub, all seventeen modules,
