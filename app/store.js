@@ -21,7 +21,7 @@
  *   closed. Callers see the same {ok:true} they always did.
  */
 import { readModuleJson, writeModuleJson, moduleFolderId, ensureFolder, createFile,
-         findChild, listFolder, readTextById } from './drive.js'
+         updateFile, findChild, listFolder, readTextById } from './drive.js'
 import { ready } from './ready.js'
 import { restoreDriveUrls } from './media.js'
 import { patchHubIndex } from './hub-index.js'
@@ -209,6 +209,46 @@ async function docsIndex() {
   return Store._docs
 }
 
+/**
+ * POST /docs — put a document into this module's docs/ folder in Drive.
+ *
+ * Adding a document has always meant putting a file in that folder, and
+ * discoverNewDocs folds in whatever it finds there. This is the same act from
+ * inside the app, which also lets it do the two things copying a file by hand
+ * cannot:
+ *
+ *   * reuse the file id when the name is already taken, so a document can be
+ *     revised without breaking the drive:<id> links already pointing at it, and
+ *   * record the type in docs-caps.json — the gate discoverNewDocs consults
+ *     before it will surface a file at all. Without that a freshly uploaded
+ *     page would sit in Drive and never appear in the listing.
+ */
+async function handleDocUpload(req) {
+  const sent = req.headers.get('X-Filename') || ''
+  const name = sent.split(/[\\/]/).pop().trim().replace(/[^A-Za-z0-9._ -]/g, '_')
+  const type = typeOf(name)
+  if (!type) return json({ error: `Not a document type this hub renders: ${sent}` }, 400)
+
+  const blob = await req.blob()
+  if (!blob.size) return json({ error: 'That file is empty' }, 400)
+
+  const docs     = await ensureFolder(await moduleFolderId(Store.mod), 'docs')
+  const existing = await findChild(docs, name)
+  const driveId  = existing ? await updateFile(existing, blob)
+                            : await createFile(docs, name, blob)
+
+  const caps  = await readModuleJson(Store.mod, 'docs-caps.json', {})
+  const types = Array.isArray(caps.types) ? caps.types : ['markdown']
+  if (!types.includes(type)) {
+    await writeModuleJson(Store.mod, 'docs-caps.json', { ...caps, types: [...types, type] })
+  }
+
+  // Both are rebuilt by the next GET /docs, which is what the caller triggers.
+  Store._docs = null
+  Store._caps = null
+  return json({ ok: true, name, type, replaced: !!existing, url: `drive:${driveId}` })
+}
+
 export function assetMap() { return Store._assets ?? {} }
 
 // ── image upload ─────────────────────────────────────────────────────────────
@@ -297,6 +337,7 @@ export function installStore(moduleId) {
           return res
         }
         if (key === 'upload') return await handleUpload(req)
+        if (key === 'docs')   return await handleDocUpload(req)
       }
     } catch (e) {
       emit('pghub:error', { message: e.message })

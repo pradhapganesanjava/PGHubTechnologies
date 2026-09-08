@@ -11,6 +11,7 @@ import { mountThemePicker } from './theme-picker.js'
 import { installStore, flush } from './store.js'
 import { installMedia }        from './media.js'
 import { installGate }         from './gate.js'
+import { installDocsUpload }   from './docs-upload.js'
 
 // Stamped by tools/build-app.py. The ?m= fallback exists so a page can be
 // pointed at another module's folder by hand when debugging.
@@ -20,6 +21,10 @@ const mod = window.__pghubModule ||
 installStore(mod)
 installMedia()
 installGate({ title: document.title || 'PG Hub Technologies', emoji: '🧰', onFlush: flush })
+
+// Adding a document meant leaving the app for Drive. This puts it on the
+// Documents page, for every module at once — see the note in docs-upload.js.
+installDocsUpload({ onFlush: flush })
 
 // ── shared preferences ──────────────────────────────────────────────────────
 // The page's own applyTheme is a plain function in its inline script, so it is
