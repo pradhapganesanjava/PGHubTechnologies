@@ -532,6 +532,13 @@ function modHref(dir, hash){
 async function loadIndex(){
   try { INDEX = await (await fetch("/__index__.json", {cache:"no-store"})).json(); }
   catch(e){ INDEX = { modules: [] }; }
+  /* hub.json's module order is curated for the category cards, and the index is
+     built in that order — but the tree, the flat list and Browse are lists you
+     scan by name, where a curated order reads as no order at all. Sorting the
+     array once here keeps all three in step. The cards are built from
+     MAN.categories and keep their own order. */
+  INDEX.modules?.sort((a, b) =>
+    (a.title || a.dir).localeCompare(b.title || b.dir, undefined, { sensitivity: "base" }));
 }
 
 /* ---- left tree ---- */
