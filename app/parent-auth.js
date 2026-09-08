@@ -58,7 +58,32 @@ export function installParentAuth(onAuth) {
 
   // Ask rather than wait: the host also pushes on iframe load, but that fires
   // before this script has parsed, so the push alone would be missed.
-  for (const origin of TRUSTED) {
+  for (const origin of hostOrigins()) {
     try { window.parent.postMessage({ type: 'pghubtech:auth-request' }, origin) } catch { /* ignore */ }
   }
+}
+
+/**
+ * Which trusted origins to address the request to.
+ *
+ * postMessage does not throw when the target origin is not the recipient's —
+ * it logs a console error the caller cannot catch. Asking all three therefore
+ * left two red lines in every framed session in production, for the two dev
+ * origins that were never going to be the parent.
+ *
+ * The parent's origin is knowable without reading across it: ancestorOrigins
+ * names it outright in Chrome and Safari, and document.referrer carries it
+ * otherwise. Where neither answers — Firefox with a referrer policy that
+ * strips it — fall back to asking each in turn, which is noisy but no less
+ * safe, since every target is still an origin on the list.
+ */
+function hostOrigins() {
+  let named = null
+  try {
+    named = location.ancestorOrigins?.[0]
+      ?? (document.referrer ? new URL(document.referrer).origin : null)
+  } catch { /* an unparseable referrer is the same as none */ }
+
+  if (!named) return TRUSTED                    // unknown: ask all of them
+  return TRUSTED.includes(named) ? [named] : [] // framed by a stranger: say nothing
 }
