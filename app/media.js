@@ -115,18 +115,46 @@ function showFrame(el, url) {
   el.setAttribute('src', url)
 }
 
-async function resolveElement(el) {
-  // A link carries the reference in href; everything else in src.
-  const attr = el.tagName === 'A' ? 'href' : 'src'
+/* Elements still resolving, so a click on one can wait for the answer rather
+   than falling through to a URL no browser can open. */
+const pending = new WeakMap()          // element -> the resolve promise
+
+/* Where each kind of element carries its drive: reference. A frame's is on
+   data-src rather than src: written into src the browser would try to load the
+   scheme itself, before any observer could swap it, and log an error for a URL
+   that was never addressed to it. See tools/build-doc-html.py. */
+const REF_ATTR = { A: 'href', IFRAME: 'data-src' }
+
+function resolveElement(el) {
+  const attr = REF_ATTR[el.tagName] ?? 'src'
   const ref = el.getAttribute(attr) || ''
   if (!ref.startsWith('drive:')) return
   const id = ref.slice('drive:'.length)
   if (!id) return
   // The observer sees both the added node and the src attribute, so the same
   // element can arrive twice; without this the document is downloaded twice.
-  if (el.dataset.driveResolving === id) return
+  if (el.dataset.driveResolving === id) return pending.get(el)
   el.dataset.driveResolving = id
   el.dataset.driveId = id
+
+  // A drive: href is a live navigation target from the moment it is in the
+  // DOM, and the scheme has no handler — clicking one before it resolves fails
+  // with "scheme does not have a registered handler" and nothing opens. Take
+  // the href off while it resolves; the delegated handler below makes a click
+  // in the meantime wait for the real URL instead of being swallowed.
+  if (el.tagName === 'A') {
+    el.removeAttribute('href')
+    el.dataset.drivePending = '1'
+    el.style.cursor = 'pointer'
+    el.title = 'Loading from Drive…'
+  }
+
+  const done = resolveRef(el, id)
+  pending.set(el, done)
+  return done
+}
+
+async function resolveRef(el, id) {
   try {
     if (el.tagName === 'IMG') {
       el.setAttribute('src', await driveBlobUrl(id))
@@ -137,7 +165,7 @@ async function resolveElement(el) {
     const isFrame = el.tagName === 'IFRAME'
     const cached = blobs.get('html:' + id) ?? blobs.get(id)
     if (cached) {
-      if (isFrame) showFrame(el, cached); else el.setAttribute('href', cached)
+      if (isFrame) showFrame(el, cached); else settleLink(el, cached)
       return
     }
 
@@ -156,7 +184,7 @@ async function resolveElement(el) {
       blobs.set(id, url)
       blobToDrive.set(url, `drive:${id}`)
     }
-    if (isFrame) showFrame(el, url); else el.setAttribute('href', url)
+    if (isFrame) showFrame(el, url); else settleLink(el, url)
   } catch (e) {
     delete el.dataset.driveResolving          // let a later attempt retry
     // A failed <img> shows its alt text, but a failed <iframe> just sits there
@@ -167,6 +195,8 @@ async function resolveElement(el) {
       el.alt = `[unavailable: ${e.message}]`
     } else if (el.tagName === 'A') {
       el.removeAttribute('href')
+      delete el.dataset.drivePending
+      el.style.cursor = ''
       el.title = `Unavailable — ${e.message}`
     } else {
       el.removeAttribute('srcdoc')
@@ -180,7 +210,15 @@ async function resolveElement(el) {
   }
 }
 
-const DRIVE_REFS = 'img[src^="drive:"], iframe[src^="drive:"], a[href^="drive:"]'
+/** Hand a link its real URL and let it behave like a link again. */
+function settleLink(el, url) {
+  el.setAttribute('href', url)
+  delete el.dataset.drivePending
+  el.style.cursor = ''
+  el.removeAttribute('title')
+}
+
+const DRIVE_REFS = 'img[src^="drive:"], iframe[data-src^="drive:"], a[href^="drive:"]'
 
 function scan(root) {
   if (!root || root.nodeType !== 1) return
@@ -217,6 +255,20 @@ export function __test_register(blobUrl, driveUrl) { blobToDrive.set(blobUrl, dr
 
 export function installMedia() {
   scan(document.body)
+
+  // "Open full page" is reachable while its document is still downloading.
+  // Capture the click, wait for the URL the frame is already fetching, then
+  // follow it — the alternative is a click that silently does nothing.
+  document.addEventListener('click', e => {
+    const a = e.target?.closest?.('a[data-drive-pending]')
+    if (!a) return
+    e.preventDefault()
+    pending.get(a)?.then(() => {
+      const href = a.getAttribute('href')
+      if (href) location.href = href
+    })
+  }, true)
+
   new MutationObserver(muts => {
     for (const m of muts) {
       if (m.type === 'attributes') { scan(m.target); continue }

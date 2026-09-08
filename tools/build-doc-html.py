@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Give every module page a renderDoc branch that can draw an HTML document.
+"""Make every module page show an HTML document the way the store hands it over.
+
+Two edits, each applied only where it is still missing.
+
+RENDER BRANCH
 
 Documents arrive through the Documents page now (app/docs-upload.js), and the
 first thing anyone uploads is a saved HTML page. The pages disagree about what
@@ -18,8 +22,17 @@ docs-caps.json — the gate that decides whether a file is surfaced at all — w
 the page can actually draw it, which is why this has to be true everywhere
 before uploading HTML is offered everywhere.
 
-Every substitution must match exactly once in the pages that need it, and a
-page that already has the branch is left alone, so this is safe to re-run.
+DEFERRED IFRAME SOURCE
+The document's URL is a "drive:<id>" reference that app/media.js swaps for a
+blob: URL once it has the bytes. Written into src=, the browser tries to load
+it the moment the element is inserted — before any observer can run — and logs
+ERR_UNKNOWN_URL_SCHEME for a URL that was never meant for it. Nothing breaks,
+because media.js then puts a real URL there, but a red console error that is
+not an error is a trap for whoever debugs this next. Handing it over as
+data-src leaves the browser nothing to try.
+
+Every substitution must match exactly once in the pages that need it, and each
+is skipped where it is already applied, so this is safe to re-run.
 
 Usage:  python3 tools/build-doc-html.py [page.html ...]
 """
@@ -68,6 +81,11 @@ CSS = '''  .detail:has(.pdf-view) { max-width: 1100px; }
 '''
 
 
+# media.js reads the reference off data-src for a frame; see DRIVE_REFS there.
+SRC = '<iframe class="pdf-frame" src="${doc.url}" title="${escapeHtml(doc.name)}"></iframe>'
+DATA_SRC = SRC.replace(' src=', ' data-src=')
+
+
 def once(html, old, page, what):
     n = html.count(old)
     if n != 1:
@@ -82,9 +100,27 @@ def build(page):
 
     if "BUILTIN_GROUPS" not in html:
         return None                              # a document, not an app page
-    if HAS_IT in html:
-        print(f"  {page:<42} already frames HTML — skipped")
+
+    notes = []
+    html, note = add_branch(html, page)
+    if note:
+        notes.append(note)
+    html, note = defer_src(html, page)
+    if note:
+        notes.append(note)
+
+    if not notes:
+        print(f"  {page:<42} already done — skipped")
         return False
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(html)
+    print(f"  {page:<42} {', '.join(notes)}")
+    return True
+
+
+def add_branch(html, page):
+    if HAS_IT in html:
+        return html, None
 
     if NARROW in html:
         once(html, NARROW, page, "pdf-only branch")
@@ -101,11 +137,14 @@ def build(page):
         once(html, CSS_ANCHOR, page, "css anchor")
         html = html.replace(CSS_ANCHOR, CSS + CSS_ANCHOR, 1)
         note += " + viewer css"
+    return html, note
 
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(html)
-    print(f"  {page:<42} {note}")
-    return True
+
+def defer_src(html, page):
+    if DATA_SRC in html:
+        return html, None
+    once(html, SRC, page, "document iframe")
+    return html.replace(SRC, DATA_SRC, 1), "src deferred"
 
 
 def main():
