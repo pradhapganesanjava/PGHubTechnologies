@@ -260,6 +260,33 @@
   .scrim{display:none}
   .seg button .i{margin-right:5px}
 
+  /* Narrow: one row, by holding the search as its own icon and only handing it
+     the row while it is being used. The input's 150px basis plus the view
+     switcher, reload and status stop fitting at about 690px, and before this
+     the search took a whole line to itself the moment they did. */
+  @media(max-width:700px){
+    .toolbar{flex-wrap:nowrap;gap:8px}
+    .seg button{padding:7px 10px}
+    .toolbar .status{font-size:.76rem;min-width:0;overflow:hidden;text-overflow:ellipsis}
+    .toolbar .search-wrap{flex:0 0 38px;max-width:38px}
+    .toolbar .search-wrap .mag{position:static;display:flex;align-items:center;justify-content:center;
+      width:38px;height:38px;border:1px solid var(--border);border-radius:9px;
+      background:var(--panel-2);transform:none;cursor:pointer}
+    .toolbar .search-wrap .mag:hover{border-color:var(--accent)}
+    .toolbar #mainSearch{display:none}
+
+    /* Open: the box takes the row from the controls it displaces. They are one
+       tap away again the moment it closes, and closing is automatic once the
+       box is left empty. */
+    body.search-on .toolbar .search-wrap{flex:1 1 auto;max-width:none}
+    body.search-on .toolbar .search-wrap .mag{position:absolute;left:14px;top:50%;
+      transform:translateY(-50%);width:auto;height:auto;border:0;background:none;display:block}
+    body.search-on .toolbar #mainSearch{display:block}
+    body.search-on .toolbar .seg,
+    body.search-on .toolbar #refresh,
+    body.search-on .toolbar .status{display:none}
+  }
+
   /* Phones: the row still needs two lines, but only two. The view switcher
      drops to its icons — the label stays in the title and aria-label — which is
      what lets the reload button and the status join it. The tagline goes with
@@ -386,7 +413,7 @@
     <div class="toolbar">
       <button class="iconbtn" id="navToggle" title="Show / hide contents" aria-label="Toggle contents">☰</button>
       <div class="search-wrap">
-        <span class="mag">🔎</span>
+        <span class="mag" id="searchIcon" role="button" tabindex="0" aria-label="Search">🔎</span>
         <input id="mainSearch" type="search" placeholder="Search everything — terms, Q&amp;A, topics, documents…" autocomplete="off">
       </div>
       <div class="seg" id="viewSeg">
@@ -769,6 +796,36 @@ async function runFullTextSearch(q){
   }
 }
 
+/* Below 700px the box is collapsed to its magnifier so the toolbar keeps to
+   one row on arrival. Opening it hands it the row; it closes itself again as
+   soon as it is left empty, so nothing has to be dismissed deliberately. */
+const NARROW_SEARCH = "(max-width:700px)";
+const searchIcon = document.getElementById("searchIcon");
+function openSearch(){
+  if (matchMedia(NARROW_SEARCH).matches) document.body.classList.add("search-on");
+  mainSearch.focus();
+}
+function closeSearchIfEmpty(){
+  if (!mainSearch.value.trim()) document.body.classList.remove("search-on");
+}
+searchIcon.addEventListener("click", () => {
+  if (!document.body.classList.contains("search-on")) openSearch();
+});
+searchIcon.addEventListener("keydown", e => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSearch(); }
+});
+mainSearch.addEventListener("blur", closeSearchIfEmpty);
+mainSearch.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  mainSearch.value = "";
+  mainSearch.blur();                       // blur closes it; this only clears first
+  document.body.classList.remove("search-on");
+});
+// Back on a wide window the class would leave the controls hidden for no reason.
+matchMedia(NARROW_SEARCH).addEventListener("change", e => {
+  if (!e.matches) document.body.classList.remove("search-on");
+});
+
 let searchDebounce;
 mainSearch.addEventListener("input", e => {
   const q = e.target.value;
@@ -791,6 +848,7 @@ function setView(v){
   // Practice has nothing to search, so the box goes; the rest of the row (view
   // switcher, status) stays, since that is how you leave Practice again.
   document.querySelector(".toolbar .search-wrap").style.display = isPractice ? "none" : "";
+  if (isPractice) document.body.classList.remove("search-on");   // else it hides the way out
   document.querySelectorAll("#viewSeg button").forEach(b => b.classList.toggle("active", b.dataset.view === v));
   if (isPractice) startPractice();
 }
