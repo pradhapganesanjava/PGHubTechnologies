@@ -268,6 +268,15 @@
      own box rather than widening the page. */
   .markdown-body pre, .markdown-body table { max-width: 100%; overflow-x: auto; }
   .detail { max-width: 820px; }
+  .detail:has(.pdf-view) { max-width: 1100px; }
+  .pdf-view { display: flex; flex-direction: column; }
+  .pdf-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-bottom: 12px; font-size: 14px; }
+  .pdf-bar .pdf-name { font-weight: 650; color: var(--text); }
+  .pdf-bar a { color: var(--accent); text-decoration: none; white-space: nowrap; }
+  .pdf-bar a:hover { text-decoration: underline; }
+  .pdf-frame { width: 100%; height: calc(100vh - 180px); min-height: 480px;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2); }
   .crumbs { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
   .tag-chip {
     display: inline-block; background: var(--chip); color: var(--accent);
@@ -2945,7 +2954,17 @@ function renderDoc(name) {
   if (!doc) return false;
   currentDocName = name;
   markActive(name);
-  detail.innerHTML = `<div class="markdown-body">${renderMarkdown(doc.markdown)}</div>`;
+  if (doc.type === "pdf" || doc.type === "html") {
+    // both embed a whole file (PDF viewer / standalone page) in the same framed chrome
+    detail.innerHTML =
+      `<div class="pdf-view">` +
+        `<div class="pdf-bar"><span class="pdf-name">${escapeHtml(doc.title || doc.name)}</span>` +
+        `<a href="${doc.url}">Open full page →</a></div>` +
+        `<iframe class="pdf-frame" src="${doc.url}" title="${escapeHtml(doc.name)}"></iframe>` +
+      `</div>`;
+  } else {
+    detail.innerHTML = `<div class="markdown-body">${renderMarkdown(doc.markdown)}</div>`;
+  }
   // A document needs a way out that does not depend on the sidebar. Injected
   // after the body is built, because the six renderDoc variants across these
   // pages assemble `detail` differently but all end here.

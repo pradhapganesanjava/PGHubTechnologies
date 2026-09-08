@@ -3107,7 +3107,8 @@ function renderDoc(name) {
   if (!doc) return false;
   currentDocName = name;
   markActive(name);
-  if (doc.type === "pdf") {
+  if (doc.type === "pdf" || doc.type === "html") {
+    // both embed a whole file (PDF viewer / standalone page) in the same framed chrome
     detail.innerHTML =
       `<div class="pdf-view">` +
         `<div class="pdf-bar"><span class="pdf-name">${escapeHtml(doc.title || doc.name)}</span>` +
