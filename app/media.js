@@ -53,22 +53,54 @@ const VENDORED = {
 }
 
 /**
- * Fetch an HTML document and return a blob: URL for a self-contained copy,
- * with its relative asset references pointed at Drive.
+ * A blob: URL for an HTML document, with its relative asset references pointed
+ * at Drive. Two copies exist, and which one you get depends on where it goes:
+ *
+ *   the frame  — the document as authored. The app's own "All documents" bar
+ *                sits above it, so it needs nothing of its own.
+ *   full page  — the same document plus a way back, because navigating to a
+ *                blob: URL leaves the reader no chrome at all.
+ *
+ * Deciding here rather than at runtime inside the document is the whole point.
+ * The obvious test — "am I the top window?" — cannot tell the two apart: the
+ * hub embeds each module page in an iframe of its own, so opening a document
+ * full page replaces the module page *inside that frame*. The document is
+ * framed either way, and asking it to work out which frame it is in is a
+ * question with no reliable answer.
  */
-async function htmlDocUrl(id, blob) {
-  const key = 'html:' + id
+async function htmlDocUrl(id, blob, forNavigation) {
+  const key = (forNavigation ? 'htmlnav:' : 'html:') + id
   if (blobs.has(key)) return blobs.get(key)
   // A document is referenced twice — the iframe that displays it and the link
   // that opens it full page — and both resolve at render time. Without this
   // they race and download it twice.
   if (inFlight.has(key)) return inFlight.get(key)
-  const p = buildHtmlDoc(id, blob, key).finally(() => inFlight.delete(key))
+  const p = (async () => {
+    const html = await docSource(id, blob)
+    const url  = URL.createObjectURL(new Blob(
+      [forNavigation ? withBackBar(html) : html], { type: 'text/html' }))
+    blobs.set(key, url)
+    blobToDrive.set(url, `drive:${id}`)
+    return url
+  })().finally(() => inFlight.delete(key))
   inFlight.set(key, p)
   return p
 }
 
-async function buildHtmlDoc(id, blob, key) {
+/* The rewritten source, shared by both copies so a document is downloaded and
+   its assets resolved once however many times it is referenced. */
+const sources = new Map()          // driveId -> rewritten html
+
+async function docSource(id, blob) {
+  if (sources.has(id)) return sources.get(id)
+  const key = 'src:' + id
+  if (inFlight.has(key)) return inFlight.get(key)
+  const p = buildHtmlDoc(id, blob).finally(() => inFlight.delete(key))
+  inFlight.set(key, p)
+  return p
+}
+
+async function buildHtmlDoc(id, blob) {
 
   // The caller already downloaded the document to sniff its type; reuse it
   // rather than fetching the same (sometimes large) file a second time.
@@ -91,10 +123,8 @@ async function buildHtmlDoc(id, blob, key) {
   const html = raw.replace(ASSET_REF, (whole, open, rel, close) =>
     resolved.has(rel) ? `${open}${resolved.get(rel)}${close}` : whole)
 
-  const url = URL.createObjectURL(new Blob([withBackBar(html)], { type: 'text/html' }))
-  blobs.set(key, url)
-  blobToDrive.set(url, `drive:${id}`)
-  return url
+  sources.set(id, html)
+  return html
 }
 
 /* A document opened full page is a blob: URL. There is no site chrome around
@@ -110,7 +140,7 @@ async function buildHtmlDoc(id, blob, key) {
 const BACK_BAR = `
 <style>
   #pghub-back{
-    position:fixed;left:14px;bottom:14px;z-index:2147483647;display:none;
+    position:fixed;left:14px;bottom:14px;z-index:2147483647;
     font:600 13px/1 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     padding:10px 15px;border-radius:999px;border:1px solid rgba(255,255,255,.16);
     background:#14181f;color:#fff;cursor:pointer;box-shadow:0 3px 14px rgba(0,0,0,.3);
@@ -122,10 +152,8 @@ const BACK_BAR = `
 <button id="pghub-back" type="button" title="Back to the module (Esc)">&#8592; Back</button>
 <script>
 (function () {
-  if (window.self !== window.top) return;      // framed: the app has its own
   var b = document.getElementById('pghub-back');
   if (!b) return;
-  b.style.display = 'block';
   var back = function () { history.back(); };
   b.addEventListener('click', back);
   document.addEventListener('keydown', function (e) {
@@ -209,7 +237,7 @@ async function resolveRef(el, id) {
     // An HTML document needs its relative assets rewritten before it can load
     // from a blob: URL; anything else (PDF, PNG) is handed over as-is.
     const isFrame = el.tagName === 'IFRAME'
-    const cached = blobs.get('html:' + id) ?? blobs.get(id)
+    const cached = blobs.get((isFrame ? 'html:' : 'htmlnav:') + id) ?? blobs.get(id)
     if (cached) {
       if (isFrame) showFrame(el, cached); else settleLink(el, cached)
       return
@@ -224,7 +252,7 @@ async function resolveRef(el, id) {
     const blob = await readBlobById(id)
     let url
     if (blob.type.includes('html')) {
-      url = await htmlDocUrl(id, blob)
+      url = await htmlDocUrl(id, blob, !isFrame)
     } else {
       url = URL.createObjectURL(blob)
       blobs.set(id, url)
