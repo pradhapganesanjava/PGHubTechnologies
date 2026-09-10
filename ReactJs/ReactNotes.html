@@ -58,6 +58,15 @@
     --code-bg: #0b0d13;
     --code-text: #c8d3f5;
     --accent-ink: #0b0d13;
+    --ok: #3fb950;
+    --warn: #e3a008;
+    --danger: #e5534b;
+  }
+  [data-theme="soft"], [data-theme="white"],
+  [data-theme="colorful"], [data-theme="cartoon"] {
+    --ok: #1a7f37;
+    --warn: #9a6700;
+    --danger: #cf222e;
   }
 
   /* ===== Moonlight ===== */
@@ -302,6 +311,53 @@
   code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px; color: var(--code-text); }
   p code, li code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; border: 1px solid var(--border); }
   pre code { line-height: 1.55; display: block; }
+
+  .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 0 0 12px; }
+  .flow.col { flex-direction: column; align-items: stretch; }
+  .flow.col > .arrow { align-self: flex-start; margin-left: 18px; }
+  .flow .node {
+    flex: 0 1 auto; min-width: 0; padding: 8px 12px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--panel-2); color: var(--text);
+    font-size: 13.5px; font-weight: 600; line-height: 1.35;
+  }
+  .flow .node small {
+    display: block; margin-top: 2px;
+    font-size: 11.5px; font-weight: 400; color: var(--muted);
+  }
+  .flow .node code { font-size: 12px; background: none; padding: 0; border: 0; color: inherit; }
+  .flow .node.accent { border-color: var(--accent); background: var(--accent-soft); }
+  .flow .node.good   { border-color: var(--ok); }
+  .flow .node.bad    { border-color: var(--danger); }
+  .flow .node.warn   { border-color: var(--warn); }
+  .flow .node.ghost  { background: none; border-style: dashed; color: var(--muted); }
+  .flow .arrow {
+    align-self: center; flex: 0 0 auto;
+    color: var(--muted); font-size: 15px; line-height: 1;
+  }
+  .flow .arrow.bad  { color: var(--danger); }
+  .flow .arrow.good { color: var(--ok); }
+  .flow-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--muted); margin: 0 0 5px;
+  }
+  .cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin: 0 0 12px; }
+  .cmp > div { border: 1px solid var(--border); border-radius: 8px; padding: 10px 13px; background: var(--panel-2); }
+  .cmp h4 { margin: 0 0 6px; font-size: 13px; color: var(--text); }
+  .cmp.split > div:first-child { border-left: 3px solid var(--ok); }
+  .cmp.split > div:last-child  { border-left: 3px solid var(--danger); }
+  .cmp ul { margin: 0; padding-left: 17px; }
+  .cmp li { font-size: 13.5px; margin-bottom: 4px; line-height: 1.5; }
+  .callout {
+    border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    background: var(--panel-2); border-radius: 0 8px 8px 0;
+    padding: 9px 13px; margin: 0 0 12px; font-size: 14px; line-height: 1.6;
+  }
+  .callout.warn   { border-left-color: var(--warn); }
+  .callout.danger { border-left-color: var(--danger); }
+  .callout.good   { border-left-color: var(--ok); }
+  .rich ul { margin: 0; padding-left: 20px; }
+  .rich li { margin-bottom: 6px; line-height: 1.6; }
 
   /* ===== Eclipse-style Java syntax highlighting ===== */
   /* Dark themes (default): IDE dark palette */
@@ -1195,6 +1251,817 @@ function builtinSeed() {
     };
   }));
   return out;
+}
+
+/* Interview Q&A seed — tagged groups, overlaid on Drive/local store like JavaNotes */
+const BUILTIN_QA = [
+  {
+    id: "qa-what-is-react",
+    group: "Interview::Fundamentals",
+    question: "What is React, and what are its main benefits?",
+    answer: "<div class=\"callout good\"><b>React is a UI library, not a framework.</b> You describe the UI as a function of state; React updates the DOM. Routing, data fetching, and build tooling come from the ecosystem (Next.js, Vite, TanStack Query).</div><ul><li><b>Declarative:</b> you say what the UI should look like for this state; React diffs and patches.</li><li><b>Component model:</b> UI is composed of reusable functions that take props and return JSX.</li><li><b>One-way data flow:</b> state down as props, events up as callbacks \u2014 easy to reason about.</li><li><b>Virtual DOM + Fiber:</b> cheap JS trees, interruptible work, concurrent features.</li><li><b>Huge ecosystem:</b> Next.js, React Native, Testing Library, DevTools.</li></ul><div class=\"callout\">Interview trap: React is <b>not</b> MVC, not a full stack, and not 'faster than the DOM'. It is a strategy to <i>minimize</i> DOM writes so you can code declaratively.</div>"
+  },
+  {
+    id: "qa-node-element-component",
+    group: "Interview::Fundamentals",
+    question: "What is the difference between a React Node, a React Element, and a React Component?",
+    answer: "<div class=\"callout good\"><b>Node = anything renderable. Element = the immutable description object. Component = the function (or class) that produces nodes.</b></div><table><tr><th>Thing</th><th>What it is</th><th>Example</th></tr><tr><td>React Node</td><td>Anything React can put on screen</td><td><code>null</code>, string, number, element, array, portal, fragment</td></tr><tr><td>React Element</td><td>Immutable object from JSX / <code>createElement</code></td><td><code>{ type: \"div\", props: {\u2026} }</code></td></tr><tr><td>React Component</td><td>Function (or class) that returns nodes</td><td><code>function Card(props) { return &lt;div/&gt; }</code></td></tr></table><p>Components are factories. Elements are the snapshots they produce. Nodes are the union of everything a parent can render as <code>children</code>.</p>"
+  },
+  {
+    id: "qa-jsx",
+    group: "Interview::Fundamentals",
+    question: "What is JSX and how does it work under the hood?",
+    answer: "<div class=\"callout good\">JSX is <b>syntax sugar</b> for <code>React.createElement</code> (classic runtime) or the automatic <code>jsx()</code> runtime. The browser never sees JSX \u2014 Babel / SWC / TypeScript compile it to function calls that return element objects.</div><pre><code>// JSX\nconst el = &lt;h1 className=\"title\"&gt;Hi {name}&lt;/h1&gt;;\n\n// compiles to (classic)\nReact.createElement(\"h1\", { className: \"title\" }, \"Hi \", name);</code></pre><ul><li>It is <b>not HTML</b>: <code>className</code> not <code>class</code>, <code>htmlFor</code> not <code>for</code>, camelCase events.</li><li>Only <b>expressions</b> go in <code>{ }</code> \u2014 no <code>if</code>/<code>for</code> statements.</li><li>A component must return a single root (or a Fragment).</li><li>JSX is optional. Nobody writes raw <code>createElement</code> by hand.</li></ul>"
+  },
+  {
+    id: "qa-class-vs-function",
+    group: "Interview::Fundamentals",
+    question: "What is the difference between class components and function components? When would you still write a class?",
+    answer: "<div class=\"cmp split\"><div><h4>Function components (default)</h4><ul><li>Plain functions + hooks</li><li>All modern APIs: Suspense data, <code>use()</code>, Actions, Compiler, Server Components</li><li>Less boilerplate, easier to test and compose</li></ul></div><div><h4>Class components (legacy)</h4><ul><li><code>extends React.Component</code>, <code>this.state</code>, lifecycle methods</li><li>Still work, still in old codebases</li><li><b>One remaining reason to write a class:</b> Error Boundaries (<code>getDerivedStateFromError</code> / <code>componentDidCatch</code>)</li></ul></div></div><div class=\"callout\">Do not say 'classes for state, functions for presentational'. That died in 16.8. Default to functions; mention error boundaries as the exception.</div>"
+  },
+  {
+    id: "qa-one-way-data",
+    group: "Interview::Fundamentals",
+    question: "Explain one-way data flow in React and why it matters.",
+    answer: "<div class=\"callout good\"><b>State lives in an owner, flows down as props, and changes flow back up as callbacks.</b> There is no two-way binding. That is why the UI is a function of state and is easy to debug.</div><div class=\"flow\"><div class=\"node accent\">Owner state<small>source of truth</small></div><div class=\"arrow \">\u2192</div><div class=\"node \">Child props<small>read-only</small></div><div class=\"arrow \">\u2192</div><div class=\"node \">onClick / onChange<small>callback \u2191</small></div><div class=\"arrow good\">\u2192</div><div class=\"node good\">setState<small>new snapshot</small></div></div><p>Benefits: a single source of truth, time-travel/debug-friendly snapshots, no 'who mutated this?' fights. The cost is prop drilling \u2014 solved with composition, context, or a store, not with two-way binding.</p>"
+  },
+  {
+    id: "qa-create-vs-clone",
+    group: "Interview::Fundamentals",
+    question: "What is the difference between <code>createElement</code> and <code>cloneElement</code>?",
+    answer: "<div class=\"cmp split\"><div><h4>createElement</h4><ul><li>Creates a <b>new</b> element from a type + props + children</li><li>What JSX compiles to</li><li><code>React.createElement('div', { className: 'x' }, 'Hi')</code></li></ul></div><div><h4>cloneElement</h4><ul><li>Copies an <b>existing</b> element and merges extra props</li><li>Used in compound components / HOCs to inject props into a child you didn't create</li><li><code>React.cloneElement(child, { active: true })</code></li></ul></div></div><div class=\"callout\">Modern code prefers composition (<code>children</code>, render props, context) over cloning. Cloning is a smell if you are doing it a lot \u2014 you don't own that child's contract.</div>"
+  },
+  {
+    id: "qa-pure-component",
+    group: "Interview::Fundamentals",
+    question: "What is a Pure Component? How do you get the same behaviour in functions?",
+    answer: "<div class=\"callout good\">A pure component re-renders only when props/state fail a <b>shallow compare</b>. Classes extend <code>React.PureComponent</code>. Functions wrap with <code>React.memo</code>.</div><p>Shallow compare means top-level fields by <code>Object.is</code>. A new object/array/function every render looks 'changed' even if contents are equal \u2014 that is why you pair <code>memo</code> with <code>useMemo</code>/<code>useCallback</code> on the parent.</p><div class=\"callout warn\">With the React Compiler, most of this memoization is inserted automatically \u2014 still know it, because interviews (and code without the compiler) will ask.</div>"
+  },
+  {
+    id: "qa-proptypes-types",
+    group: "Interview::Fundamentals",
+    question: "How do you type-check React component props?",
+    answer: "<ul><li><b>TypeScript</b> \u2014 the default in 2026. Props are an interface/type; the compiler catches mismatches at build time.</li><li><b>PropTypes</b> \u2014 runtime checks (React 15 era). Still seen in JS-only libs. <code>Component.propTypes = { name: PropTypes.string.isRequired }</code>.</li><li>TS wins for apps. PropTypes wins only if you ship an untyped JS package and want runtime warnings in dev.</li></ul><pre><code>type ButtonProps = { label: string; onClick: () =&gt; void; variant?: \"primary\" | \"danger\" };\nfunction Button({ label, onClick, variant = \"primary\" }: ButtonProps) { /* \u2026 */ }</code></pre>"
+  },
+  {
+    id: "qa-react-limitations",
+    group: "Interview::Fundamentals",
+    question: "What are the limitations of React?",
+    answer: "<ul><li>It is <b>only the view</b> \u2014 routing, i18n, data, forms, CSS are your problem (or a framework's).</li><li>JSX + a build step is required for a decent DX.</li><li>Easy to over-render if you are sloppy with state location and unstable props.</li><li>SEO / first paint historically needed SSR (Next.js / RSC now cover this).</li><li>Error boundaries still need a class; some APIs (Suspense for data) need a framework.</li></ul>"
+  },
+  {
+    id: "qa-state-vs-props",
+    group: "Interview::State & Props",
+    question: "What is the difference between state and props?",
+    answer: "<div class=\"cmp split\"><div><h4>Props</h4><ul><li>Inputs from the parent</li><li><b>Read-only</b> \u2014 never mutate them</li><li>Change when the parent re-renders with new values</li><li>Configure a component</li></ul></div><div><h4>State</h4><ul><li>Data the component owns</li><li>Updated with a setter (<code>setX</code> / dispatch)</li><li>A setter <b>schedules a re-render</b></li><li>Snapshot per render \u2014 not a live box</li></ul></div></div><div class=\"callout\">Say this: 'Props in, state owned, events up.' If two children need the same data, lift the state to the closest common parent.</div>"
+  },
+  {
+    id: "qa-lifting-state",
+    group: "Interview::State & Props",
+    question: "What is lifting state up, and when do you do it?",
+    answer: "<div class=\"callout good\">When two siblings need the same data, <b>move the state to their closest common ancestor</b>. The parent owns it and passes value + setter down. One source of truth; the children stay in sync.</div><pre><code>function Parent() {\n  const [text, setText] = useState(\"\");\n  return (\n    &lt;&gt;\n      &lt;Input value={text} onChange={setText} /&gt;\n      &lt;Preview value={text} /&gt;\n    &lt;/&gt;\n  );\n}</code></pre><p>Do this before reaching for Context or Redux. Lift until it hurts (prop drilling), then Context/composition/store.</p>"
+  },
+  {
+    id: "qa-prop-drilling",
+    group: "Interview::State & Props",
+    question: "What is prop drilling, and how do you fix it?",
+    answer: "<div class=\"callout warn\">Prop drilling is threading data through intermediate components that <b>do not use it</b>, just to reach a deep child. It couples the tree and makes refactors noisy.</div><ul><li><b>Composition:</b> pass already-built elements (<code>header={&lt;Avatar user={user} /&gt;}</code>) so data stays at the top.</li><li><b>Context:</b> theme, auth, locale \u2014 low-frequency, tree-wide values.</li><li><b>Store:</b> Zustand / Redux / TanStack Query when many unrelated subtrees write and read the same data.</li><li>Do <b>not</b> put high-frequency state (every keystroke) in a fat context \u2014 every consumer re-renders.</li></ul>"
+  },
+  {
+    id: "qa-dont-mutate-state",
+    group: "Interview::State & Props",
+    question: "Why does React recommend against mutating state?",
+    answer: "<div class=\"callout danger\">React detects changes by <b>comparing references</b> (and, for <code>memo</code>, shallow fields). Mutating in place keeps the same reference, so React may skip the render and you get a stale UI.</div><pre><code>// \u274c mutate \u2014 same array, React may bail out\ntodos.push(newTodo);\nsetTodos(todos);\n\n// \u2705 new reference\nsetTodos(t =&gt; [...t, newTodo]);\nsetUser(u =&gt; ({ ...u, name: \"Ada\" }));</code></pre><p>Immutability also makes concurrent rendering safe: React may snapshot state and render it twice (Strict Mode) or interrupt a render. A mutated object would be a torn snapshot.</p>"
+  },
+  {
+    id: "qa-functional-setstate",
+    group: "Interview::State & Props",
+    question: "When must you use the updater form of <code>setState</code> / <code>useState</code>'s setter?",
+    answer: "<div class=\"callout good\">Whenever the <b>next value depends on the previous</b>. Closures capture a snapshot. Two <code>setCount(count + 1)</code> in the same event both read 0 and you get 1, not 2.</div><pre><code>setCount(count + 1);\nsetCount(count + 1);      // \u274c +1 total (same snapshot)\n\nsetCount(c =&gt; c + 1);\nsetCount(c =&gt; c + 1);     // \u2705 +2, queued updaters compose</code></pre><p>Also use it after awaits, in timeouts, and in effects \u2014 the <code>count</code> in the closure may be stale. The updater always receives the latest queued state.</p>"
+  },
+  {
+    id: "qa-usestate-setter-happens",
+    group: "Interview::State & Props",
+    question: "What happens when you call a <code>useState</code> setter?",
+    answer: "<p class=\"flow-label\">The pipeline</p><div class=\"flow\"><div class=\"node accent\">setN(next)<small>schedule</small></div><div class=\"arrow \">\u2192</div><div class=\"node \">React bails if Object.is<small>same value?</small></div><div class=\"arrow \">\u2192</div><div class=\"node \">Re-render<small>new snapshot</small></div><div class=\"arrow good\">\u2192</div><div class=\"node good\">Diff + commit<small>DOM patch</small></div></div><ul><li>It does <b>not</b> mutate the current variable. <code>n</code> in this render stays the old snapshot.</li><li>Updates in the same event are <b>batched</b> (React 18+ batches everywhere, including timeouts/promises).</li><li>If the new value is <code>Object.is</code>-equal to the old, React skips the re-render.</li><li>Objects/arrays must be new references or the skip kicks in.</li></ul>"
+  },
+  {
+    id: "qa-reset-state",
+    group: "Interview::State & Props",
+    question: "How do you reset a component's state?",
+    answer: "<ul><li><b>Change the <code>key</code></b> \u2014 React unmounts the old instance and mounts a fresh one. <code>&lt;Editor key={docId} /&gt;</code> is the canonical 'new document, blank form'.</li><li>Call the setter with the initial value \u2014 does not reset refs, effects, or child state.</li><li>Lift state and pass new props \u2014 children still keep their own state unless keyed.</li></ul><div class=\"callout\">Interview gold: 'I reset by changing <code>key</code> when the identity of the thing changed (user, doc, wizard step). I don't sprinkle <code>key={Math.random()}</code> \u2014 that remounts every render.'</div>"
+  },
+  {
+    id: "qa-controlled-uncontrolled",
+    group: "Interview::State & Props",
+    question: "What is the difference between controlled and uncontrolled components?",
+    answer: "<div class=\"cmp split\"><div><h4>Controlled</h4><ul><li><code>value={state}</code> + <code>onChange</code></li><li>React is the source of truth</li><li>Instant validation, formatting, disable</li><li>Re-render per keystroke (usually fine)</li></ul></div><div><h4>Uncontrolled</h4><ul><li>DOM holds the value; read via <code>ref</code></li><li><code>defaultValue</code> for initial</li><li>Less code, fewer renders</li><li>Harder to validate as-you-type</li></ul></div></div><div class=\"callout\">Don't mix: an input cannot flip between <code>value</code> and unmanaged. Pick one. Forms in React 19 can also use the <code>action</code> prop + FormData \u2014 another uncontrolled-friendly path.</div>"
+  },
+  {
+    id: "qa-virtual-dom",
+    group: "Interview::Rendering",
+    question: "What is the Virtual DOM, and why does React use it?",
+    answer: "<div class=\"callout good\">The VDOM is a <b>cheap JS object tree</b> mirroring the UI. On state change React builds a new tree, diffs it against the previous one, and patches only the real DOM nodes that changed.</div><p>The real DOM is slow to read/write. JS objects are cheap. The VDOM is not 'faster than the DOM' \u2014 it is a strategy to <b>batch and minimize</b> DOM writes so you can write declarative code.</p><ul><li><b>Benefit:</b> declarative UI, predictable updates, cross-platform (React Native uses a different host).</li><li><b>Cost:</b> extra memory, diffing overhead; a huge tree that always changes still costs. That's why keys, memo, and compiler exist.</li></ul>"
+  },
+  {
+    id: "qa-shadow-vs-virtual",
+    group: "Interview::Rendering",
+    question: "What is the difference between Shadow DOM and Virtual DOM?",
+    answer: "<div class=\"cmp split\"><div><h4>Shadow DOM</h4><ul><li><b>Browser standard</b> for style/DOM encapsulation</li><li>Used by Web Components</li><li>A real, hidden DOM subtree attached to a host element</li><li>CSS inside does not leak out (and vice versa)</li></ul></div><div><h4>Virtual DOM</h4><ul><li><b>React implementation detail</b></li><li>In-memory description of UI</li><li>Never a browser API</li><li>Diffed to decide real DOM mutations</li></ul></div></div><div class=\"callout\">React 19 improved Web Component interop, but they are still different layers. Don't conflate them in an interview.</div>"
+  },
+  {
+    id: "qa-reconciliation",
+    group: "Interview::Rendering",
+    question: "What is reconciliation? How does React decide what to update?",
+    answer: "<div class=\"callout good\">Reconciliation is the <b>diff</b>: compare the new element tree to the previous one and compute the cheapest host-tree update. Fiber made this interruptible.</div><ul><li><b>Different type</b> (<code>div</code> \u2192 <code>span</code>, or different component): tear down the old subtree (unmount, state gone) and mount new.</li><li><b>Same type:</b> update props in place; recurse into children.</li><li><b>Lists:</b> match children by <code>key</code>. Stable keys = reorder/reuse. Index keys = mismatch on insert/delete/reorder.</li><li>Heuristic is O(n), not O(n\u00b3). React does not magically know two trees are 'the same component moved' without keys.</li></ul>"
+  },
+  {
+    id: "qa-fiber",
+    group: "Interview::Rendering",
+    question: "What is React Fiber, and how is it better than the old stack reconciler?",
+    answer: "<div class=\"callout good\">Fiber (React 16) rewrote the reconciler so work is a <b>linked list of units</b> React can pause, reuse, abort, or prioritize \u2014 instead of one blocking recursive walk.</div><table><tr><th>Phase</th><th>Can pause?</th><th>Does it touch the DOM?</th></tr><tr><td>Render / reconcile</td><td>Yes \u2014 side-effect free</td><td>No, it builds a work-in-progress tree</td></tr><tr><td>Commit</td><td>No \u2014 synchronous</td><td>Yes: DOM, refs, layout effects</td></tr></table><p>This is the foundation of concurrent features: <code>startTransition</code>, Suspense, streaming SSR, selective hydration. Time slicing = yielding to the browser between units of work so typing stays responsive.</p>"
+  },
+  {
+    id: "qa-time-slicing",
+    group: "Interview::Rendering",
+    question: "What is time slicing, and how does concurrent React use it?",
+    answer: "<div class=\"callout good\">Time slicing means React <b>breaks render work into chunks</b> and yields to the browser so input/animation frames aren't blocked by a 200ms render of a huge list.</div><p>Urgent updates (typing, clicks) can interrupt a non-urgent render (filtering a big list wrapped in <code>startTransition</code>). The in-progress tree is thrown away or reused; the commit phase still runs atomically so the user never sees a half-updated UI.</p>"
+  },
+  {
+    id: "qa-keys",
+    group: "Interview::Rendering",
+    question: "What is the <code>key</code> prop for, and what goes wrong if you use the array index?",
+    answer: "<div class=\"callout good\">Keys are <b>identity</b> among siblings. React matches old\u2194new children by key to reuse DOM and component state. They must be stable, unique among siblings, and predictable.</div><ul><li>Index keys are OK only for <b>static lists</b> that never reorder, filter, or insert.</li><li>On reorder/delete, index keys attach the wrong state to the wrong row (inputs swap values, animations glitch).</li><li>Never use <code>Math.random()</code> or a new UUID per render \u2014 that remounts every time.</li><li>Changing a key on purpose is how you <b>reset</b> a subtree.</li></ul>"
+  },
+  {
+    id: "qa-rerender",
+    group: "Interview::Rendering",
+    question: "What does re-rendering mean in React?",
+    answer: "<div class=\"callout good\">A re-render means React <b>calls your function again</b> with the latest props/state and diffs the returned elements. It is not 'the DOM refreshed'. Most re-renders never touch the DOM.</div><ul><li>Triggered by: state setter in this component, parent re-render, context value change, a hook that subscribes (store).</li><li>Cheap for small components. Expensive when you do heavy work in the body or pass new object/fn props into a large memoized child.</li><li>Preventing every re-render is not the goal. Preventing <b>wasted expensive</b> ones is.</li></ul>"
+  },
+  {
+    id: "qa-hydration",
+    group: "Interview::Rendering",
+    question: "What is hydration? When do you use <code>hydrateRoot</code> vs <code>createRoot</code>?",
+    answer: "<div class=\"cmp split\"><div><h4>createRoot</h4><ul><li>Client-only apps</li><li>Wipes the container and mounts fresh</li><li>SPA / Vite without SSR</li></ul></div><div><h4>hydrateRoot</h4><ul><li>SSR / SSG HTML already on the page</li><li>Attaches listeners + state to existing DOM</li><li>Mismatch (server HTML \u2260 client render) warns and can rewrite nodes</li></ul></div></div><div class=\"callout\">Mismatch classics: <code>Date.now()</code>, <code>Math.random()</code>, <code>typeof window</code> during render. Defer those to <code>useEffect</code> or a Client Component.</div>"
+  },
+  {
+    id: "qa-portals",
+    group: "Interview::Rendering",
+    question: "What are Portals, and when do you use them?",
+    answer: "<div class=\"callout good\">A portal renders children into a <b>DOM node outside the parent</b> while keeping them in the same React tree \u2014 context, state, and event bubbling still follow React parents.</div><pre><code>createPortal(&lt;div className=\"overlay\"&gt;{children}&lt;/div&gt;, document.getElementById(\"modal-root\"));</code></pre><p>Use for modals, toasts, tooltips, dropdowns that must escape <code>overflow: hidden</code> or a stacking context. Events still bubble through the React parent, which is why a modal can close from an outside click handler higher in the React tree.</p>"
+  },
+  {
+    id: "qa-concurrent",
+    group: "Interview::Rendering",
+    question: "What are concurrent features, and how does React prioritize updates?",
+    answer: "<div class=\"callout good\">Concurrent React (18+) can <b>interrupt rendering</b>. There is no 'Concurrent Mode' flag anymore \u2014 you opt in per update.</div><ul><li><b>Urgent:</b> typing, clicks, hover \u2014 default updates. They preempt transitions.</li><li><b>Transition:</b> <code>startTransition</code> / <code>useTransition</code> \u2014 filtering, tab switches, navigation. Can be interrupted; <code>isPending</code> is true while they work.</li><li><b>Suspense:</b> a child can pause the nearest boundary and show a fallback without blocking siblings.</li><li>Priority is not a number you set. You mark work as a transition when it is OK to be delayed.</li></ul>"
+  },
+  {
+    id: "qa-long-running",
+    group: "Interview::Rendering",
+    question: "How do you keep expensive work from blocking the UI?",
+    answer: "<ul><li>Wrap the state update that reveals the heavy UI in <code>startTransition</code> so typing stays urgent.</li><li><code>useDeferredValue</code> for a lagging copy of a value (search list trails the input).</li><li>Move truly heavy CPU off the main thread: Web Worker, or precompute on the server (RSC).</li><li>Virtualize long lists (<code>react-window</code> / <code>@tanstack/react-virtual</code>).</li><li>Don't put 10k-item <code>.map</code> in the render path without a transition or virtualization.</li></ul><pre><code>const [q, setQ] = useState(\"\");\nconst [isPending, startTransition] = useTransition();\nconst onChange = e =&gt; {\n  setQ(e.target.value);                         // urgent\n  startTransition(() =&gt; setList(filter(e.target.value))); // interruptible\n};</code></pre>"
+  },
+  {
+    id: "qa-hooks-why",
+    group: "Interview::Hooks",
+    question: "What are Hooks, and why were they introduced?",
+    answer: "<div class=\"callout good\">Hooks (16.8) let function components have <b>state, effects, context, and refs</b> without classes. They also let you reuse stateful logic without HOCs or render-prop wrapper hell.</div><ul><li>Colocate related logic in a custom hook instead of splitting it across <code>componentDidMount</code> / <code>DidUpdate</code> / <code>WillUnmount</code>.</li><li>No <code>this</code> binding bugs.</li><li>The same hook works in any function component \u2014 composition over inheritance.</li></ul>"
+  },
+  {
+    id: "qa-rules-of-hooks",
+    group: "Interview::Hooks",
+    question: "What are the Rules of Hooks, and why do they exist?",
+    answer: "<div class=\"callout good\"><b>1. Only call hooks at the top level</b> of a React function (not in loops, conditions, nested fns).<br><b>2. Only call them from React functions</b> (components or custom hooks), not plain JS.</div><p>React stores hook state in a <b>list on the fiber</b>, matched by <b>call order</b>. A conditional hook shifts the list and you get 'Rendered more hooks than during the previous render' \u2014 or silent state corruption.</p><pre><code>// \u274c\nif (ok) useState(0);\n// \u2705\nconst [n, setN] = useState(0);\nif (ok) setN(1);</code></pre>"
+  },
+  {
+    id: "qa-useeffect",
+    group: "Interview::Hooks",
+    question: "Explain <code>useEffect</code>: dependency array, cleanup, and common pitfalls.",
+    answer: "<table><tr><th>Deps</th><th>When it runs</th></tr><tr><td>omitted</td><td>After every paint \u2014 almost always a bug</td></tr><tr><td><code>[]</code></td><td>Mount (+ remount in Strict Mode). Cleanup on unmount</td></tr><tr><td><code>[a, b]</code></td><td>After paint when <code>Object.is</code> says a dep changed</td></tr></table><ul><li>Effects run <b>after paint</b> (unlike <code>useLayoutEffect</code>). Don't block first paint with them.</li><li>Return a cleanup for subscriptions, timers, abort controllers. Strict Mode remounts in dev to prove cleanup works.</li><li>Stale closures: if you read state inside an effect, it must be in the deps (or use a ref / updater).</li><li>Don't fetch-in-effect as the default architecture in 2026 \u2014 Server Components / loaders / TanStack Query. Still know it; legacy apps and client-only widgets use it.</li><li>Infinite loop: setting state in an effect without a guard or with an unstable dep (new object every render).</li></ul>"
+  },
+  {
+    id: "qa-useeffect-vs-uselayout",
+    group: "Interview::Hooks",
+    question: "What is the difference between <code>useEffect</code> and <code>useLayoutEffect</code>?",
+    answer: "<div class=\"cmp split\"><div><h4>useEffect</h4><ul><li>After paint</li><li>Does not block the browser</li><li>Default for fetch, logging, subscriptions</li></ul></div><div><h4>useLayoutEffect</h4><ul><li>After DOM update, <b>before paint</b></li><li>Blocks paint \u2014 can jank</li><li>Measure DOM / prevent flicker (tooltip position, scroll restore)</li></ul></div></div><div class=\"callout\">If you see a visual flash then a correction, you probably needed layout effect. If you don't, don't use it \u2014 it is sync and delays paint. It also warns on SSR (there is no layout on the server).</div>"
+  },
+  {
+    id: "qa-useref",
+    group: "Interview::Hooks",
+    question: "What is <code>useRef</code>, and how is it different from <code>useState</code>?",
+    answer: "<div class=\"callout good\">A ref is a <b>mutable box</b> (<code>{ current }</code>) that survives renders and <b>does not trigger a re-render</b> when you write to it.</div><table><tr><th>Use</th><th>Tool</th></tr><tr><td>Change should show on screen</td><td><code>useState</code></td></tr><tr><td>DOM node (focus, measure, 3rd-party lib)</td><td><code>useRef</code> + <code>ref={}</code></td></tr><tr><td>Timer id, previous value, 'isMounted' flag</td><td><code>useRef</code></td></tr></table><p>React 19: <code>ref</code> is a normal prop on function components (no <code>forwardRef</code> required for new code), and callback refs can return a cleanup function.</p>"
+  },
+  {
+    id: "qa-usememo-usecallback",
+    group: "Interview::Hooks",
+    question: "When do you use <code>useMemo</code> vs <code>useCallback</code>? How do they relate to <code>React.memo</code>?",
+    answer: "<div class=\"callout good\"><code>useMemo(() =&gt; v, deps)</code> caches a <b>value</b>. <code>useCallback(fn, deps)</code> caches a <b>function</b> (it is <code>useMemo(() =&gt; fn, deps)</code>). <code>React.memo</code> skips a child's render if props are shallow-equal.</div><ul><li>Memoize when the computation is expensive <b>or</b> when a child is <code>memo</code>'d and would re-render because you passed a new object/fn identity.</li><li>Don't wrap everything. Comparison has a cost. Profile first.</li><li>React Compiler auto-memoizes; still explain the trio \u2014 interviewers want the mental model.</li></ul>"
+  },
+  {
+    id: "qa-usereducer",
+    group: "Interview::Hooks",
+    question: "When do you pick <code>useReducer</code> over <code>useState</code>?",
+    answer: "<ul><li>Next state depends on previous in a <b>few related fields</b> (wizard, form with many actions).</li><li>You want named actions: <code>dispatch({ type: 'added', payload })</code> \u2014 easier to log and test.</li><li>You want to pass a <b>stable dispatch</b> down (dispatch identity is stable) instead of many callbacks.</li><li>Keep <code>useState</code> for one boolean, one string, one number. Don't reducer-ify a toggle.</li></ul><div class=\"callout\">It is not Redux. No middleware, no time travel. If many distant trees need the same reducer, then a store.</div>"
+  },
+  {
+    id: "qa-useid",
+    group: "Interview::Hooks",
+    question: "What is <code>useId</code> and why does it exist?",
+    answer: "<div class=\"callout good\">It generates a <b>stable unique ID</b> that matches between server and client \u2014 for <code>htmlFor</code> / <code>aria-labelledby</code> / SVG ids. It is <b>not</b> a list key.</div><pre><code>function Field({ label }) {\n  const id = useId();\n  return (&lt;&gt;\n    &lt;label htmlFor={id}&gt;{label}&lt;/label&gt;\n    &lt;input id={id} /&gt;\n  &lt;/&gt;);\n}</code></pre><div class=\"callout\">Don't use it for list keys or for 'unique id' in your database. Keys come from your data. <code>useId</code> is for accessibility wiring that must not mismatch during hydration.</div>"
+  },
+  {
+    id: "qa-usecontext",
+    group: "Interview::Hooks",
+    question: "When would you use <code>useContext</code>? What are the pitfalls?",
+    answer: "<p>Use it for <b>tree-wide, low-frequency</b> values: theme, current user, locale, feature flags. Any descendant can read without props.</p><ul><li>Every consumer re-renders when the Provider's <code>value</code> identity changes \u2014 memoize the value.</li><li>Split contexts (state vs dispatch) so a button that only dispatches doesn't re-render on every state tick.</li><li>Don't use Context as a dumping ground for all app state. That's how you rebuild a slow Redux.</li><li><code>use(Context)</code> in React 19 can be called conditionally \u2014 unlike <code>useContext</code>.</li></ul>"
+  },
+  {
+    id: "qa-custom-hooks",
+    group: "Interview::Hooks",
+    question: "What are custom hooks? Show when you'd write one.",
+    answer: "<div class=\"callout good\">A custom hook is a function whose name starts with <code>use</code> that calls other hooks. It shares <b>stateful logic</b>, not UI.</div><pre><code>function useOnline() {\n  const [on, setOn] = useState(navigator.onLine);\n  useEffect(() =&gt; {\n    const go = () =&gt; setOn(true), nogo = () =&gt; setOn(false);\n    window.addEventListener(\"online\", go);\n    window.addEventListener(\"offline\", nogo);\n    return () =&gt; {\n      window.removeEventListener(\"online\", go);\n      window.removeEventListener(\"offline\", nogo);\n    };\n  }, []);\n  return on;\n}</code></pre><p>Extract when two components copy the same effect+state, or when a component is drowning in incidental logic (media query, debounce, previous value). Return the minimum surface the UI needs.</p>"
+  },
+  {
+    id: "qa-forwardref",
+    group: "Interview::Hooks",
+    question: "What was <code>forwardRef</code> for? What changed in React 19?",
+    answer: "<div class=\"callout good\">Function components did not receive <code>ref</code> (reserved). <code>forwardRef((props, ref) =&gt; \u2026)</code> passed it through \u2014 inputs, focus traps, wrapping a DOM node.</div><p>React 19: <code>ref</code> is a regular prop. New components just destructure <code>{ ref }</code>. Keep <code>forwardRef</code> in libraries that still support React 18. Callback refs can return a cleanup: <code>ref={node => { \u2026; return () => { /* detach */ }; }}</code>.</p>"
+  },
+  {
+    id: "qa-usesyncexternalstore",
+    group: "Interview::Hooks",
+    question: "How do you subscribe to an external store without tearing?",
+    answer: "<div class=\"callout good\"><code>useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)</code> is the concurrent-safe way to read non-React state (browser APIs, legacy stores). It avoids tearing under concurrent renders.</div><p>If you roll <code>useEffect</code> + <code>useState</code> to mirror <code>window.innerWidth</code> or a Flux store, you can show a frame of old data. <code>useSyncExternalStore</code> is what Redux and Zustand use under the hood for React 18+.</p>"
+  },
+  {
+    id: "qa-hooks-lifecycle",
+    group: "Interview::Hooks",
+    question: "Map class lifecycle methods to hooks.",
+    answer: "<table><tr><th>Class</th><th>Hooks equivalent</th></tr><tr><td><code>constructor</code> / initial state</td><td><code>useState(init)</code> / lazy init <code>useState(() =&gt; \u2026)</code></td></tr><tr><td><code>componentDidMount</code></td><td><code>useEffect(fn, [])</code> (plus Strict Mode remount in dev)</td></tr><tr><td><code>componentDidUpdate</code></td><td><code>useEffect(fn, [deps])</code></td></tr><tr><td><code>componentWillUnmount</code></td><td>effect cleanup function</td></tr><tr><td><code>shouldComponentUpdate</code> / PureComponent</td><td><code>React.memo</code> / Compiler</td></tr><tr><td><code>getDerivedStateFromError</code></td><td>still a class Error Boundary</td></tr><tr><td><code>getSnapshotBeforeUpdate</code></td><td><code>useLayoutEffect</code> (measure before paint)</td></tr></table>"
+  },
+  {
+    id: "qa-react-memo",
+    group: "Interview::Performance",
+    question: "How does <code>React.memo</code> work, and when should you use it?",
+    answer: "<div class=\"callout good\"><code>React.memo(Comp)</code> shallow-compares previous vs next props and <b>skips the render</b> if they look equal. Default compare is <code>Object.is</code> per prop.</div><ul><li>Use on expensive pure children that receive stable props while the parent re-renders often.</li><li>Useless if the parent always passes a new object/array/function \u2014 fix the parent first.</li><li>A custom compare can go deep, but then you own that bug surface.</li><li>Don't memo leaf buttons. Memo list rows, charts, editors.</li></ul>"
+  },
+  {
+    id: "qa-memo-vs-usememo",
+    group: "Interview::Performance",
+    question: "What is the difference between <code>React.memo</code> and <code>useMemo</code>?",
+    answer: "<div class=\"cmp split\"><div><h4>React.memo</h4><ul><li>Wraps a <b>component</b></li><li>Skip re-rendering that component</li><li>Compares props</li></ul></div><div><h4>useMemo</h4><ul><li>Runs <b>inside</b> a component</li><li>Skip recomputing a value</li><li>Compares dependency array</li></ul></div></div><p>They compose: parent <code>useMemo</code>s the <code>data</code> object so a <code>memo</code> child can bail out. Mixing them up is a common interview fail.</p>"
+  },
+  {
+    id: "qa-prevent-rerenders",
+    group: "Interview::Performance",
+    question: "How do you prevent unnecessary re-renders?",
+    answer: "<ul><li><b>Push state down</b> \u2014 don't store keystrokes in a giant parent that re-renders a dashboard.</li><li><b>Lift content as children</b> \u2014 a stateful wrapper re-renders; <code>children</code> already computed by the parent don't.</li><li><code>React.memo</code> + stable props (<code>useCallback</code>/<code>useMemo</code> or Compiler).</li><li>Split context; memoize provider value.</li><li>Virtualize lists; <code>startTransition</code> for heavy filters.</li><li>Profile first (React Profiler). Guessing is how you add 40 memos that do nothing.</li></ul>"
+  },
+  {
+    id: "qa-context-perf",
+    group: "Interview::Performance",
+    question: "How do you optimize Context so consumers don't over-render?",
+    answer: "<ul><li>Memoize <code>value</code>: <code>useMemo(() =&gt; ({ theme, setTheme }), [theme])</code>.</li><li>Split: <code>StateContext</code> vs <code>DispatchContext</code>. Buttons that only dispatch skip state updates.</li><li>Don't put a fast-changing value (mouse coords, input text) in a wide context.</li><li>Use a store (Zustand selector, Redux <code>useSelector</code>) when different consumers need different slices.</li><li>React 19 <code>use(Context)</code> still re-renders on value change \u2014 it does not magically subscribe to a field.</li></ul>"
+  },
+  {
+    id: "qa-code-splitting",
+    group: "Interview::Performance",
+    question: "What is code splitting, and how do you do it in React?",
+    answer: "<div class=\"callout good\">Split the JS bundle so the browser downloads <b>only the route/widget you need</b>. Smaller first load, faster TTI.</div><pre><code>const Dashboard = lazy(() =&gt; import(\"./Dashboard\"));\n&lt;Suspense fallback={&lt;Spinner /&gt;}&gt;\n  &lt;Dashboard /&gt;\n&lt;/Suspense&gt;</code></pre><p>Route-level splits (React Router / Next.js) give the biggest win. Component-level for heavy editors/charts. Named exports need a tiny re-export default. Next.js App Router splits by default via Server Components + client boundaries.</p>"
+  },
+  {
+    id: "qa-lazy-loading",
+    group: "Interview::Performance",
+    question: "How does <code>React.lazy</code> work?",
+    answer: "<code>React.lazy(() => import('./A'))</code> returns a component that <b>suspends</b> until the dynamic import resolves. It must sit under a <code>Suspense</code> boundary. Failed imports should be wrapped in an error boundary.<div class=\"callout\">Lazy only works with default exports of client components. Server Components in Next just <code>import</code> async \u2014 no <code>lazy</code> needed.</div>"
+  },
+  {
+    id: "qa-virtualization",
+    group: "Interview::Performance",
+    question: "What is list virtualization, and when do you need it?",
+    answer: "<div class=\"callout good\">Only mount the <b>visible rows</b> (plus overscan). A 50k-row table should not create 50k DOM nodes.</div><p>Reach for it when you profile and see commit time / DOM size explode on lists (hundreds+ of complex rows). Libraries: <code>react-window</code>, <code>react-virtualized</code>, TanStack Virtual. Don't virtualize a 20-item dropdown.</p>"
+  },
+  {
+    id: "qa-profiler",
+    group: "Interview::Performance",
+    question: "How do you use the React Profiler to find performance issues?",
+    answer: "<ul><li>React DevTools \u2192 Profiler \u2192 record an interaction (type, open modal, switch tab).</li><li>Look at <b>which components committed</b>, why they rendered ('hook 3 changed', 'parent'), and how long.</li><li>Flamegraph: wide + yellow/red = expensive. Ranked: worst first.</li><li>Fix the cause (state too high, unstable props, missing transition), don't randomly memo.</li><li>Browser Performance panel for paint/layout; Profiler for React-specific 'why did this render'.</li></ul>"
+  },
+  {
+    id: "qa-hoc",
+    group: "Interview::Patterns",
+    question: "What is a Higher-Order Component?",
+    answer: "<div class=\"callout good\">A function that takes a component and returns a new one with extra behaviour: <code>const Auth = withAuth(Page)</code>.</div><p>Pre-hooks reuse pattern. Costs: wrapper hell, static methods not forwarded, prop name clashes, worse DevTools stacks. Custom hooks replaced most HOCs. You still see <code>connect</code> in old Redux.</p>"
+  },
+  {
+    id: "qa-render-props",
+    group: "Interview::Patterns",
+    question: "What are render props, and how did they evolve into hooks?",
+    answer: "<div class=\"callout good\">A component takes a function (often as <code>children</code>) and calls it with data so the consumer decides the UI: <code>&lt;Mouse&gt;{pos => &lt;p&gt;{pos.x}&lt;/p&gt;}&lt;/Mouse&gt;</code>.</div><p>Same job as HOCs: share logic. Same cost: nesting. Hooks inlined that logic: <code>const pos = useMouse()</code>. Render props still shine for <b>headless / compound</b> libraries where the consumer must control markup.</p>"
+  },
+  {
+    id: "qa-compound",
+    group: "Interview::Patterns",
+    question: "What are compound components?",
+    answer: "<div class=\"callout good\">A set of components that share implicit state (often via context) and are composed by the consumer: <code>&lt;Select&gt;&lt;Select.Option/&gt;&lt;/Select&gt;</code> \u2014 like <code>&lt;select&gt;</code>/<code>&lt;option&gt;</code>.</div><p>Used by Radix, Headless UI, Reach. Flexible markup + accessible behaviour without a 40-prop mega component. Trade-off: more moving parts; you must document the contract.</p>"
+  },
+  {
+    id: "qa-composition",
+    group: "Interview::Patterns",
+    question: "Explain composition vs inheritance in React.",
+    answer: "<div class=\"callout good\">React composes with <b><code>children</code>, element props, and hooks</b> \u2014 not class hierarchies. 'Containment' (slots) and 'specialization' (wrapping) replace extends.</div><pre><code>function Dialog({ title, children, footer }) {\n  return (\n    &lt;div className=\"dlg\"&gt;\n      &lt;h2&gt;{title}&lt;/h2&gt;\n      &lt;div&gt;{children}&lt;/div&gt;\n      {footer}\n    &lt;/div&gt;\n  );\n}</code></pre>"
+  },
+  {
+    id: "qa-container-presentational",
+    group: "Interview::Patterns",
+    question: "What is the presentational vs container pattern? Is it still useful?",
+    answer: "<p>Containers fetched data / talked to stores; presentational components were props-in, JSX-out. It was how we reused UI in the Redux era.</p><div class=\"callout\">Today: custom hooks hold the data logic, components stay mostly presentational without a rigid split. Server Components blurred it further (the 'container' is often an async server function). Know the pattern; don't force two files for every widget.</div>"
+  },
+  {
+    id: "qa-anti-patterns",
+    group: "Interview::Patterns",
+    question: "What are common React anti-patterns?",
+    answer: "<ul><li>Mutating state / props.</li><li>Index keys on dynamic lists; random keys.</li><li>Derived state copied into <code>useState</code> that drifts from props (use the prop, or <code>key</code> to reset).</li><li>Effects that sync props \u2192 state for no reason.</li><li>Fetching in <code>useEffect</code> without abort / race handling.</li><li>Giant context for high-frequency state.</li><li>Anonymous components defined inside render (<code>function Item()</code> inside Parent) \u2014 remounts every time.</li><li>Using Redux for a form's local input.</li><li>Disabling Strict Mode to 'fix' double effects.</li></ul>"
+  },
+  {
+    id: "qa-error-boundary",
+    group: "Interview::Patterns",
+    question: "What are Error Boundaries, and what do they not catch?",
+    answer: "<div class=\"callout good\">A class with <code>static getDerivedStateFromError</code> and/or <code>componentDidCatch</code> that catches <b>render-time errors in the child tree</b> and shows a fallback instead of a white screen.</div><ul><li><b>Catch:</b> render, lifecycle, constructors of children.</li><li><b>Don't catch:</b> event handlers, async/promises, SSR, the boundary's own render, <code>setTimeout</code>.</li><li>Event/async: <code>try/catch</code> or route the error into state and rethrow in render to involve a boundary.</li><li>Place them around independent panels so one widget dying doesn't kill the app.</li></ul>"
+  },
+  {
+    id: "qa-strict-mode",
+    group: "Interview::Patterns",
+    question: "What does Strict Mode do, and why do effects run twice in development?",
+    answer: "<div class=\"callout good\">Dev-only checks. It double-invokes render, updaters, and effects (mount \u2192 cleanup \u2192 mount) to surface impure logic and missing cleanup. <b>No production impact.</b></div><p>If your effect double-fetches, your cleanup isn't aborting. Fix the effect (AbortController), don't disable Strict Mode. It also warns on deprecated lifecycles and unexpected side effects during render.</p>"
+  },
+  {
+    id: "qa-synthetic-events",
+    group: "Interview::Forms & Events",
+    question: "How does React's event system differ from native DOM events?",
+    answer: "<ul><li>You listen with camelCase props: <code>onClick</code>, <code>onChange</code>.</li><li>React 17+ delegates to the <b>root container</b>, not <code>document</code>.</li><li>Events bubble along the <b>React tree</b> (portals included), not necessarily the DOM tree.</li><li><code>e.preventDefault()</code> / <code>stopPropagation()</code> work; <code>e.nativeEvent</code> is the real one.</li><li>Pass the function, don't call it: <code>onClick={fn}</code> not <code>onClick={fn()}</code>. Close over args with <code>() => fn(id)</code>.</li></ul>"
+  },
+  {
+    id: "qa-forms-react19",
+    group: "Interview::Forms & Events",
+    question: "How do forms work in React 19 with the <code>action</code> prop?",
+    answer: "<div class=\"callout good\">You can pass an async function to <code>&lt;form action={fn}&gt;</code>. React calls it with <code>FormData</code>, manages pending state, and can invoke a Server Action without a hand-rolled API route.</div><pre><code>async function save(formData) {\n  \"use server\";\n  await db.item.create({ name: formData.get(\"name\") });\n}\n&lt;form action={save}&gt;\n  &lt;input name=\"name\" /&gt;\n  &lt;button&gt;Save&lt;/button&gt;\n&lt;/form&gt;</code></pre><p>Pair with <code>useActionState</code> for returned errors/state and <code>useFormStatus</code> in nested Submit buttons. Controlled inputs still exist when you need live validation.</p>"
+  },
+  {
+    id: "qa-flux",
+    group: "Interview::State Management",
+    question: "What is the Flux pattern?",
+    answer: "<div class=\"callout good\">Unidirectional flow Facebook published before Redux: <b>Action \u2192 Dispatcher \u2192 Store \u2192 View</b>. Views never write to stores directly; they dispatch.</div><p>Redux is the most famous Flux variant (single store, pure reducers). The idea \u2014 one-way data, explicit events \u2014 is what React already wants. You don't implement vanilla Flux in 2026; you name it to show you know why Redux looks the way it does.</p>"
+  },
+  {
+    id: "qa-redux-2026",
+    group: "Interview::State Management",
+    question: "How does Redux work, and is it still relevant?",
+    answer: "<p>A single store, pure reducers, dispatch(action). React-Redux subscribes with selectors. Redux Toolkit (RTK) is the only sane way to write it (slices, Immer, RTK Query).</p><div class=\"callout\">Still relevant in large, many-team apps that want DevTools, middleware, and a strict event log. Overkill for most products in 2026 \u2014 Zustand, Context, and TanStack Query cover the usual cases. Don't say 'Redux is dead'; say 'I pick it when the domain events are the product'.</div>"
+  },
+  {
+    id: "qa-zustand-jotai",
+    group: "Interview::State Management",
+    question: "What are Zustand and Jotai, and when would you pick them over Redux?",
+    answer: "<div class=\"cmp\"><div><h4>Zustand</h4><ul><li>Tiny store, hook-based</li><li>Selectors so components pick a slice</li><li>Almost no boilerplate</li><li>Great default client store</li></ul></div><div><h4>Jotai</h4><ul><li>Atomic: each atom is a piece of state</li><li>Bottom-up, like Recoil</li><li>Fine-grained subscriptions</li><li>Good when atoms compose</li></ul></div></div><p>Pick them when you want shared client state without Redux ceremony. Still use TanStack Query for server cache.</p>"
+  },
+  {
+    id: "qa-server-state",
+    group: "Interview::State Management",
+    question: "What is 'server state', and how does TanStack Query handle it?",
+    answer: "<div class=\"callout good\">Server state is <b>data that lives on the backend</b> \u2014 it can be stale, it needs cache, retries, deduping, and invalidation. It is not the same as <code>useState</code>.</div><ul><li>TanStack Query: <code>useQuery({ queryKey, queryFn })</code> caches by key, shares in-flight requests, refetches on focus, retries, marks stale.</li><li>Mutations invalidate/refetch related keys.</li><li>RSC + Server Actions move some of this to the server; Query still shines for highly interactive client islands and SPAs.</li></ul>"
+  },
+  {
+    id: "qa-pick-state",
+    group: "Interview::State Management",
+    question: "How do you decide between local state, Context, and a store?",
+    answer: "<table><tr><th>Kind of data</th><th>Put it</th></tr><tr><td>Owned by one widget (toggle, input)</td><td><code>useState</code> / <code>useReducer</code></td></tr><tr><td>Shared by a small subtree</td><td>Lift state, or compose children</td></tr><tr><td>Theme / auth / locale</td><td>Context</td></tr><tr><td>Cache of GET / list / detail</td><td>TanStack Query or RSC fetch</td></tr><tr><td>Complex client domain, many writers</td><td>Zustand / Redux</td></tr></table><div class=\"callout\">Start local. Lift. Context for rare global. Query for server. Store last. The interview is about this ladder, not a brand.</div>"
+  },
+  {
+    id: "qa-react-router",
+    group: "Interview::Routing",
+    question: "What is React Router, and how does client-side routing work?",
+    answer: "<div class=\"callout good\">The browser stays on one HTML document. The router reads the URL and renders a matching element tree. <code>Link</code> uses History API (<code>pushState</code>) instead of a full reload.</div><pre><code>&lt;BrowserRouter&gt;\n  &lt;Routes&gt;\n    &lt;Route path=\"/\" element={&lt;Home /&gt;} /&gt;\n    &lt;Route path=\"users/:id\" element={&lt;User /&gt;} /&gt;\n  &lt;/Routes&gt;\n&lt;/BrowserRouter&gt;</code></pre><code>useParams</code>, <code>useSearchParams</code>, <code>useNavigate</code> read/write the URL. Nested routes use <code>&lt;Outlet /&gt;</code>. Data APIs (loaders/actions) exist in RR 6.4+; Next.js App Router is the other common answer."
+  },
+  {
+    id: "qa-browser-vs-hash",
+    group: "Interview::Routing",
+    question: "BrowserRouter vs HashRouter?",
+    answer: "<div class=\"cmp split\"><div><h4>BrowserRouter</h4><ul><li>Clean URLs: <code>/users/1</code></li><li>Needs server fallback to <code>index.html</code> on refresh</li><li>Default for real apps</li></ul></div><div><h4>HashRouter</h4><ul><li><code>/#/users/1</code> \u2014 hash never hits the server</li><li>Static file hosts without rewrite rules</li><li>Ugly URLs; skip if you control the server</li></ul></div></div>"
+  },
+  {
+    id: "qa-private-routes",
+    group: "Interview::Routing",
+    question: "How do you implement private routes / a route guard?",
+    answer: "<pre><code>function RequireAuth({ children }) {\n  const { user } = useAuth();\n  const loc = useLocation();\n  if (!user) return &lt;Navigate to=\"/login\" state={{ from: loc }} replace /&gt;;\n  return children;\n}\n&lt;Route path=\"/app\" element={&lt;RequireAuth&gt;&lt;Dashboard /&gt;&lt;/RequireAuth&gt;} /&gt;</code></pre><p>On login, navigate to <code>state.from</code> or <code>/</code>. Use <code>replace</code> so the login page isn't in history. Next.js: middleware or a server layout that redirects.</p>"
+  },
+  {
+    id: "qa-404-router",
+    group: "Interview::Routing",
+    question: "How do you handle 404s and programmatic navigation?",
+    answer: "<ul><li>A splat route: <code>&lt;Route path=\"*\" element={&lt;NotFound /&gt;} /&gt;</code> last.</li><li><code>useNavigate()</code> \u2014 <code>navigate('/x')</code>, <code>navigate(-1)</code>, <code>navigate('/x', { replace: true })</code>.</li><li><code>redirect</code> from a loader/action in data routers.</li><li>Query: <code>useSearchParams</code> \u2014 don't parse <code>window.location</code> by hand.</li></ul>"
+  },
+  {
+    id: "qa-csr-vs-ssr-routing",
+    group: "Interview::Routing",
+    question: "Client-side routing vs server-side routing?",
+    answer: "<div class=\"cmp split\"><div><h4>Client (SPA)</h4><ul><li>One shell; JS swaps views</li><li>Fast after first load</li><li>Shareable URLs need History API + server fallback</li><li>First paint waits on JS unless you SSR</li></ul></div><div><h4>Server</h4><ul><li>Each URL is a request; server returns HTML</li><li>Great first paint / SEO</li><li>Full reload between pages (unless you enhance with RSC/streaming)</li><li>Next.js App Router mixes both</li></ul></div></div>"
+  },
+  {
+    id: "qa-rr-vs-next",
+    group: "Interview::Routing",
+    question: "How does React Router compare to the Next.js App Router?",
+    answer: "<b>React Router</b> is a library you drop into a SPA (Vite) or a framework. Nested routes, loaders, actions, all client or SSR if you set it up.<b>Next App Router</b> is a full framework: folders = routes, Server Components by default, <code>loading.tsx</code> / <code>error.tsx</code> as Suspense/error boundaries, server actions, streaming. Pick Next when you want SSR/RSC; pick RR+Vite when you want a client app with less magic."
+  },
+  {
+    id: "qa-test-react",
+    group: "Interview::Testing",
+    question: "How do you test React applications? What is React Testing Library's philosophy?",
+    answer: "<div class=\"callout good\"><b>Test what the user sees and does</b>, not implementation details. RTL queries by role, label, text \u2014 not by component state or CSS class.</div><ul><li><b>Jest / Vitest</b> \u2014 runner, mocks, snapshots (use sparingly).</li><li><b>Testing Library</b> \u2014 <code>render</code>, <code>screen.getByRole</code>, <code>userEvent.click</code>.</li><li><b>MSW</b> \u2014 mock HTTP at the network, not inside the component.</li><li><b>Playwright / Cypress</b> \u2014 a few critical E2E paths.</li><li>Avoid Enzyme shallow in new code. Avoid snapshotting huge trees.</li></ul><pre><code>render(&lt;Login /&gt;);\nawait userEvent.type(screen.getByLabelText(/email/i), \"a@b.com\");\nawait userEvent.click(screen.getByRole(\"button\", { name: /sign in/i }));\nexpect(await screen.findByText(/welcome/i)).toBeInTheDocument();</code></pre>"
+  },
+  {
+    id: "qa-test-async-mock",
+    group: "Interview::Testing",
+    question: "How do you test async UI and mock APIs?",
+    answer: "<ul><li>Use <code>findBy*</code> / <code>waitFor</code> \u2014 they retry until timeout.</li><li>MSW handlers in test setup so the component still <code>fetch</code>es.</li><li>Don't mock <code>useEffect</code>. Don't assert that a spy of your fetch helper was called unless that <i>is</i> the contract.</li><li><code>userEvent</code> over <code>fireEvent</code> \u2014 it flushes more realistically.</li></ul>"
+  },
+  {
+    id: "qa-test-hooks",
+    group: "Interview::Testing",
+    question: "How do you test custom hooks?",
+    answer: "<code>renderHook(() => useToggle())</code> from Testing Library. Act on <code>result.current</code>, assert the next value. Prefer testing a hook <b>through a tiny component</b> that uses it \u2014 closer to reality.<div class=\"callout\">If a hook is hard to test, it is probably too coupled to a specific component. Pass dependencies (fetch, storage) in.</div>"
+  },
+  {
+    id: "qa-snapshot-shallow",
+    group: "Interview::Testing",
+    question: "Snapshot testing vs shallow vs full rendering \u2014 what is actually useful?",
+    answer: "<ul><li><b>Full render (RTL):</b> default. Exercises hooks, context, DOM.</li><li><b>Shallow (Enzyme / TestRenderer):</b> children as placeholders. Hides integration bugs. Rarely worth it now.</li><li><b>Snapshots:</b> fragile on anything that moves. OK for a tiny pure formatter, bad for pages. Reviewing 400-line snapshot diffs trains people to click 'u'.</li></ul>"
+  },
+  {
+    id: "qa-ssr",
+    group: "Interview::SSR & RSC",
+    question: "What is SSR, and what does it buy you?",
+    answer: "<div class=\"callout good\">The server runs React, sends HTML, then the client hydrates. User sees content before JS finishes. Better TTFB/LCP and SEO than a blank SPA shell.</div><ul><li>Needs a Node (or edge) runtime and a framework (Next, Remix).</li><li>Watch hydration mismatches.</li><li>Streaming SSR + Suspense: send a shell, then stream in slow bits instead of waiting for all data.</li></ul>"
+  },
+  {
+    id: "qa-ssg",
+    group: "Interview::SSR & RSC",
+    question: "What is static generation (SSG)?",
+    answer: "<div class=\"callout good\">Render HTML <b>at build time</b> (or on-demand ISR). Serve from a CDN. Perfect for docs, marketing, blogs.</div><p>Next: <code>generateStaticParams</code> + fetch with a long cache. Revalidate when content changes. Don't SSG a per-user dashboard \u2014 that's SSR or client fetch.</p>"
+  },
+  {
+    id: "qa-streaming-ssr",
+    group: "Interview::SSR & RSC",
+    question: "What is streaming SSR, and why does it matter?",
+    answer: "<div class=\"callout good\">Instead of waiting for the whole tree, the server <b>flushes HTML in chunks</b> as Suspense boundaries resolve. The browser paints the shell, then fills holes.</div><p>Pairs with selective hydration: React hydrates ready islands first; a slow widget doesn't block the whole page from becoming interactive.</p>"
+  },
+  {
+    id: "qa-rsc",
+    group: "Interview::SSR & RSC",
+    question: "What are React Server Components, and how do they differ from Client Components?",
+    answer: "<div class=\"cmp split\"><div><h4>Server Components (default in Next App Router)</h4><ul><li>Run on the server (or at build)</li><li>Can be <code>async</code>, talk to DB/secrets</li><li>Zero JS shipped for that component</li><li>No state, effects, or browser APIs</li></ul></div><div><h4>Client Components (<code>\"use client\"</code>)</h4><ul><li>The interactive island</li><li>Hooks, events, browser APIs</li><li>JS is shipped and hydrated</li><li>Can import into other clients; cannot be imported into a server file the other way without a boundary</li></ul></div></div><div class=\"callout\">There is no <code>\"use server\"</code> on components \u2014 that marks Server Actions. Server is the default; you opt into client at the boundary. Pass serializable props across.</div>"
+  },
+  {
+    id: "qa-rsc-payload",
+    group: "Interview::SSR & RSC",
+    question: "How does the RSC payload / server-client split work?",
+    answer: "<p>The server renders Server Components to a special stream (not just HTML) describing the tree, including placeholders for Client Components. The client already has the client bundle; it stitches the two. Data fetched on the server never appears as a REST waterfall in the browser unless you chose that.</p><div class=\"callout\">Don't fetch the same data again in a child client <code>useEffect</code> 'just in case'. Pass props, or use a cache that understands RSC.</div>"
+  },
+  {
+    id: "qa-suspense",
+    group: "Interview::SSR & RSC",
+    question: "How does Suspense work, and what can trigger it?",
+    answer: "<div class=\"callout good\">A child <b>throws a promise</b> (or uses an API that does). The nearest <code>&lt;Suspense fallback&gt;</code> shows the fallback until the promise resolves, then retries the tree.</div><ul><li><code>React.lazy</code> code-split.</li><li><code>use(promise)</code> / async Server Components.</li><li>Framework data (Next <code>loading.tsx</code> is a Suspense boundary).</li><li>It does <b>not</b> catch errors \u2014 that's Error Boundaries. Combine both around a route.</li></ul>"
+  },
+  {
+    id: "qa-data-fetching",
+    group: "Interview::SSR & RSC",
+    question: "What are modern data-fetching patterns, and what are the classic pitfalls?",
+    answer: "<table><tr><th>Pattern</th><th>Where</th></tr><tr><td>Async Server Component <code>await fetch</code></td><td>Next App Router \u2014 preferred</td></tr><tr><td>RR loaders / Next route handlers</td><td>Framework data APIs</td></tr><tr><td>TanStack Query</td><td>Client islands, SPA, polling, optimistic</td></tr><tr><td><code>useEffect</code> + fetch</td><td>Legacy / truly client-only widgets</td></tr></table><ul><li><b>Race:</b> slow request 1 finishes after request 2 \u2014 abort or ignore stale.</li><li><b>No cleanup:</b> setState on unmounted component (warning in older React; still wasted work).</li><li><b>Waterfalls:</b> fetch in a child after the parent committed. Fetch in parallel on the server instead.</li><li><b>Duplicate cache:</b> same GET in five components \u2014 Query or RSC cache.</li><li><b>Loading/error:</b> always design the three states; Suspense + error boundary is the modern pair.</li></ul>"
+  },
+  {
+    id: "qa-react19-whats-new",
+    group: "Interview::React 19",
+    question: "What's new in React 19 that interviewers expect you to name?",
+    answer: "<ul><li><b>Actions</b> + form <code>action</code>, <code>useActionState</code>, <code>useFormStatus</code>, <code>useOptimistic</code>.</li><li><b><code>use()</code></b> to read promises and context (can be conditional).</li><li><b>Server Components / Server Actions</b> stable.</li><li><b>React Compiler</b> (auto-memo).</li><li><b><code>ref</code> as a prop</b> + callback-ref cleanup.</li><li>Document metadata: <code>&lt;title&gt;</code>, <code>&lt;meta&gt;</code> in the tree.</li><li>Better hydration + asset preloading APIs (<code>preload</code>, <code>preinit</code>).</li><li>Improved Web Component compatibility.</li></ul>"
+  },
+  {
+    id: "qa-actions",
+    group: "Interview::React 19",
+    question: "What are Actions in React 19?",
+    answer: "<div class=\"callout good\">An Action is an <b>async function used as a transition</b> \u2014 typically a form submit or Server Action. React tracks pending, errors, and can recover via error boundaries. You don't manually <code>useState(isSubmitting)</code> for the happy path.</div><p>Client: <code>startTransition(async () => { await save(); })</code> or <code>&lt;form action={save}&gt;</code>. Server: <code>\"use server\"</code> function imported into a client form. The point is a first-class mutation pipeline, not another REST wrapper.</p>"
+  },
+  {
+    id: "qa-use-hook",
+    group: "Interview::React 19",
+    question: "What is the <code>use()</code> hook, and how is it different from <code>useEffect</code> + fetch?",
+    answer: "<div class=\"callout good\"><code>use(promise)</code> <b>reads a promise during render</b>. If pending, the component suspends. If resolved, you get the value. Unlike other hooks, it <b>can be called conditionally</b>.</div><pre><code>function Comments({ commentsPromise }) {\n  const comments = use(commentsPromise); // suspends until ready\n  return comments.map(c =&gt; &lt;li key={c.id}&gt;{c.text}&lt;/li&gt;);\n}</code></pre><ul><li>No loading state boilerplate \u2014 the parent <code>Suspense</code> handles it.</li><li>The promise should be <b>stable</b> (created in a parent/server, not <code>use(fetch())</code> inline every render).</li><li><code>useEffect</code> + fetch is a client after-paint pattern with race/cleanup issues. <code>use()</code> is render-time and Suspense-native.</li></ul>"
+  },
+  {
+    id: "qa-useactionstate",
+    group: "Interview::React 19",
+    question: "What does <code>useActionState</code> do?",
+    answer: "<div class=\"callout good\"><code>const [state, formAction, pending] = useActionState(action, initialState)</code> \u2014 wraps an Action so you get the <b>last returned value</b> (errors, field messages) and pending flag for a form.</div><pre><code>const [err, action, pending] = useActionState(updateUser, null);\n&lt;form action={action}&gt;\n  {err &amp;&amp; &lt;p&gt;{err}&lt;/p&gt;}\n  &lt;button disabled={pending}&gt;Save&lt;/button&gt;\n&lt;/form&gt;</code></pre><p>Formerly experimental <code>useFormState</code>. Client Components only. The action should return serializable data.</p>"
+  },
+  {
+    id: "qa-useformstatus",
+    group: "Interview::React 19",
+    question: "What does <code>useFormStatus</code> do?",
+    answer: "<div class=\"callout good\">Called in a <b>child</b> of a <code>&lt;form&gt;</code>, it reads that form's pending/data/method/action. Lets a dumb <code>&lt;Submit/&gt;</code> disable itself without prop drilling.</div><pre><code>function Submit() {\n  const { pending } = useFormStatus();\n  return &lt;button disabled={pending}&gt;{pending ? \"Saving\u2026\" : \"Save\"}&lt;/button&gt;;\n}</code></pre><div class=\"callout\">It does not work in the same component that renders the <code>&lt;form&gt;</code> \u2014 must be nested. That's the usual trap.</div>"
+  },
+  {
+    id: "qa-useoptimistic",
+    group: "Interview::React 19",
+    question: "What is <code>useOptimistic</code> and when do you use it?",
+    answer: "<div class=\"callout good\">You show the <b>expected result immediately</b> while the Action is in flight, then React rolls back if it fails.</div><pre><code>const [optimistic, addOptimistic] = useOptimistic(todos);\nasync function add(formData) {\n  const title = formData.get(\"title\");\n  addOptimistic(t =&gt; [...t, { id: \"tmp\", title }]);\n  await saveTodo(title);\n}</code></pre><p>Classic: chat send, like button, todo add. Don't optimistic-update money transfers without a solid rollback story. Pair with Actions so pending/error is consistent.</p>"
+  },
+  {
+    id: "qa-compiler",
+    group: "Interview::React 19",
+    question: "What is the React Compiler, and does it replace <code>useMemo</code>?",
+    answer: "<div class=\"callout good\">A <b>build-time</b> Babel plugin that auto-memoizes components and hooks when they follow the Rules of React. Most manual <code>memo</code>/<code>useMemo</code>/<code>useCallback</code> become unnecessary.</div><ul><li>If your code is impure (mutating during render, conditional hooks), the compiler <b>skips that function</b> \u2014 silently. Interviews love this.</li><li>Works with React 17\u201319; best with 19's runtime cache.</li><li>You still memoize when you have a measured hotspot the compiler can't see (third-party child, unstable foreign values).</li><li>Say: 'I write pure components and let the compiler work; I can still explain manual memo for legacy or escape hatches.'</li></ul>"
+  },
+  {
+    id: "qa-useTransition-vs-deferred",
+    group: "Interview::React 19",
+    question: "What is the difference between <code>useTransition</code> and <code>useDeferredValue</code>?",
+    answer: "<div class=\"cmp split\"><div><h4>useTransition</h4><ul><li>You wrap the <b>setState</b> that is non-urgent</li><li>Gives <code>isPending</code></li><li>You control which update is a transition</li></ul></div><div><h4>useDeferredValue</h4><ul><li>You keep a <b>lagging copy</b> of a value</li><li>The urgent value (input) updates now; the deferred one trails</li><li>Good when you don't own the setter (value came from props)</li></ul></div></div><p>Search box: either <code>setQuery</code> urgent + <code>startTransition(setResults)</code>, or <code>const deferred = useDeferredValue(query)</code> and filter with <code>deferred</code>. Same idea, different API shape.</p>"
+  },
+  {
+    id: "qa-metadata-preload",
+    group: "Interview::React 19",
+    question: "How does React 19 handle document metadata and asset preloading?",
+    answer: "<p>You can render <code>&lt;title&gt;</code>, <code>&lt;meta&gt;</code>, <code>&lt;link rel=\"stylesheet\"&gt;</code> from components; React hoists them into <code>document.head</code>. No more <code>react-helmet</code> for the simple case.</p><p>Resource APIs: <code>preload</code>, <code>prefetchDNS</code>, <code>preinit</code> \u2014 tell the browser to fetch fonts/scripts/CSS early. Frameworks (Next) often wrap this. Mention it as 'React can now own head tags and hints without a third-party side channel.'</p>"
+  },
+  {
+    id: "qa-debug",
+    group: "Interview::Experience",
+    question: "How do you debug a React app in the real world?",
+    answer: "<ul><li><b>React DevTools:</b> props/state/hooks, why-did-this-render (Profiler), highlight updates.</li><li>Breakpoint in the component body \u2014 you're in a render, don't setState there.</li><li><code>console.log</code> in render is noisy (Strict Mode doubles it). Log in effects/handlers.</li><li>Error boundary + logging service (Sentry) in prod.</li><li>Hydration warnings: diff server vs client output.</li><li>Performance: Profiler + Chrome Performance, not guesses.</li><li>Stale closure: log the value and the dep array; check the identity of objects.</li></ul>"
+  },
+  {
+    id: "qa-a11y",
+    group: "Interview::Experience",
+    question: "How do you handle accessibility in React?",
+    answer: "<ul><li>Semantic HTML first (<code>button</code> not <code>div onClick</code>).</li><li>Labels via <code>htmlFor</code> + <code>useId</code>.</li><li>Keyboard: tab order, <code>onKeyDown</code>, focus management (modal trap, restore focus).</li><li>ARIA only when native semantics aren't enough.</li><li>Don't put <code>click</code> on non-interactive elements without role+tabIndex+keyboard.</li><li>eslint-plugin-jsx-a11y; axe in CI; test with keyboard and a screen reader once per flow.</li></ul>"
+  },
+  {
+    id: "qa-i18n",
+    group: "Interview::Experience",
+    question: "How do you localize a React app?",
+    answer: "<p>Don't concatenate strings. Use a library (FormatJS / react-intl, i18next, Lingui) with message catalogs, ICU plural/select, and locale-aware dates/numbers. Next.js has <code>next-intl</code> / built-in i18n routing.</p><ul><li>Store locale in Context or URL prefix (<code>/en/\u2026</code>).</li><li>SSR: same locale on server and client or you hydrate-mismatch.</li><li><code>useId</code> still for DOM ids; i18n is for copy.</li></ul>"
+  },
+  {
+    id: "qa-styling",
+    group: "Interview::Experience",
+    question: "What are the ways to style React components, and how do you choose?",
+    answer: "<table><tr><th>Approach</th><th>When</th></tr><tr><td>Plain CSS / CSS modules</td><td>Default; modules avoid clashes</td></tr><tr><td>Tailwind</td><td>Utility-first teams, fast UI</td></tr><tr><td>CSS-in-JS (emotion, Panda, stylex)</td><td>Dynamic styles colocated; watch runtime cost</td></tr><tr><td>Component libraries (MUI, Radix + CSS)</td><td>Design system, a11y primitives</td></tr><tr><td>inline <code>style={{}}</code></td><td>Truly dynamic one-offs; no pseudo-classes</td></tr></table><p>Mention CSS modules vs Tailwind as the two you actually shipped. Interviewers want a choice with a reason, not a list of 12 tools.</p>"
+  },
+  {
+    id: "qa-optimistic-experience",
+    group: "Interview::Experience",
+    question: "How would you implement optimistic UI (pre\u2013React 19 and with 19)?",
+    answer: "<p>Pre-19: keep 'confirmed' state from the server and an 'optimistic' overlay in <code>useState</code>; rollback on error; disable double-submit.</p><p>React 19: <code>useOptimistic</code> + Action. The hook is wired to the in-flight Action so rollback is automatic. Still handle the error UI (toast / field message).</p>"
+  },
+  {
+    id: "qa-resize",
+    group: "Interview::Experience",
+    question: "How do you re-render when the browser is resized?",
+    answer: "<pre><code>function useWidth() {\n  return useSyncExternalStore(\n    onStoreChange =&gt; {\n      window.addEventListener(\"resize\", onStoreChange);\n      return () =&gt; window.removeEventListener(\"resize\", onStoreChange);\n    },\n    () =&gt; window.innerWidth,\n    () =&gt; 0  // server snapshot\n  );\n}</code></pre><div class=\"callout\">Don't <code>useState</code>+<code>useEffect</code> if you can use <code>useSyncExternalStore</code> \u2014 no tearing. Debounce if the work per resize is heavy. CSS and container queries often remove the need.</div>"
+  },
+  {
+    id: "qa-batching",
+    group: "Interview::Experience",
+    question: "What is state batching in React 18+?",
+    answer: "<div class=\"callout good\">React 18 batches <b>all</b> setState calls inside timeouts, promises, and native handlers \u2014 not only React event handlers. One re-render for multiple setters in the same tick.</div><p>To force a flush (rare): <code>flushSync(() => setX(1))</code> \u2014 needed when you must read the DOM immediately after. Don't sprinkle it.</p>"
+  },
+  {
+    id: "qa-npx-npm",
+    group: "Interview::Tooling",
+    question: "What is the difference between npm and npx? package.json vs package-lock.json?",
+    answer: "<table><tr><th>Tool / file</th><th>Job</th></tr><tr><td>npm</td><td>Install deps, run <code>package.json</code> scripts</td></tr><tr><td>npx</td><td>Run a package binary once (download if needed)</td></tr><tr><td>package.json</td><td>Declared ranges (<code>^18.2.0</code>) and scripts</td></tr><tr><td>package-lock.json</td><td>Exact tree that was installed \u2014 commit it</td></tr></table><p>dependency = runtime; devDependency = build/test. CI should <code>npm ci</code> against the lockfile, not a floating <code>npm install</code>.</p>"
+  },
+  {
+    id: "qa-bundlers",
+    group: "Interview::Tooling",
+    question: "Vite vs Webpack vs Parcel \u2014 what do you actually say?",
+    answer: "<div class=\"callout good\">They bundle and (in dev) serve with HMR. <b>Vite</b> is the 2026 default for SPAs: native ESM in dev, Rollup/esbuild for prod. Webpack is the legacy CRA/ejected world. Parcel is zero-config, less common in big teams.</div><p>CRA is deprecated. New apps: Vite or a framework (Next). Mention Fast Refresh: HMR that keeps hook state.</p>"
+  },
+  {
+    id: "qa-tree-shaking",
+    group: "Interview::Tooling",
+    question: "What is tree shaking?",
+    answer: "<div class=\"callout good\">Dead-code elimination on <b>static ESM</b> <code>import</code>/<code>export</code>. Unused exports never reach the bundle.</div><p>Help it: named imports, <code>\"sideEffects\": false</code> when true, avoid <code>import _ from 'lodash'</code>. Dynamic <code>require</code> cannot be shaken. Code splitting is complementary: shake removes unused; split delays used-but-not-now.</p>"
+  },
+  {
+    id: "qa-hmr",
+    group: "Interview::Tooling",
+    question: "What is Hot Module Replacement / Fast Refresh?",
+    answer: "<p>Dev server swaps the changed module without a full reload, preserving component state. Fast Refresh is React's flavour of that. Production is unaffected. If state resets on edit, you broke the rules (anonymous export, hook order change).</p>"
+  },
+  {
+    id: "qa-keys-reset-pattern",
+    group: "Interview::Experience",
+    question: "You switch users and the form still shows the previous user's name. Why, and how do you fix it?",
+    answer: "<div class=\"callout danger\">Component state is tied to the component instance, not to a prop named <code>userId</code>. If the same <code>&lt;Form /&gt;</code> stays mounted, its <code>useState(user.name)</code> only used the first name as initial state.</div><pre><code>// \u2705 identity changed \u2192 remount \u2192 fresh state\n&lt;ProfileForm key={user.id} user={user} /&gt;</code></pre><p>Alternatively derive from props and don't copy into state, or sync in an effect (usually worse). This is one of the most common 'experience' traps.</p>"
+  },
+  {
+    id: "qa-stale-closure",
+    group: "Interview::Experience",
+    question: "What is a stale closure in React? Give a concrete example.",
+    answer: "<pre><code>function Timer() {\n  const [n, setN] = useState(0);\n  useEffect(() =&gt; {\n    const id = setInterval(() =&gt; setN(n + 1), 1000); // n is always 0\n    return () =&gt; clearInterval(id);\n  }, []); // eslint would warn\n}</code></pre><div class=\"callout\">The interval closure captured <code>n = 0</code>. Fix: <code>setN(c =&gt; c + 1)</code>, or put <code>n</code> in deps (recreates the interval), or store n in a ref. Interviewers listen for 'snapshot of props/state per render'.</div>"
+  },
+  {
+    id: "qa-why-not-index-demo",
+    group: "Interview::Experience",
+    question: "A todo list with inputs uses <code>key={i}</code>. You delete the first item and the wrong leftover text remains. Explain.",
+    answer: "<div class=\"callout danger\">React reused the first row's component/DOM because the key <code>0</code> still exists \u2014 it now points at what used to be item 2, but the <b>input state stayed on that fiber</b>.</div><p>Fix: <code>key={todo.id}</code>. This is the practical cousin of the 'index as key' theory question \u2014 tell the story.</p>"
+  },
+  {
+    id: "qa-children-rerender",
+    group: "Interview::Experience",
+    question: "A parent holds a counter. A heavy child is passed as <code>children</code> and does not re-render when the counter ticks. Why?",
+    answer: "<div class=\"callout good\">The parent that owns the counter re-renders, but <code>children</code> was <b>created by the grandparent</b> (or whoever passed it). That element's type+props didn't change, so React reuses the heavy fiber.</div><pre><code>function Shell({ children }) {\n  const [n, setN] = useState(0);\n  return (&lt;&gt;&lt;button onClick={() =&gt; setN(n+1)}&gt;{n}&lt;/button&gt;{children}&lt;/&gt;);\n}\n// &lt;Shell&gt;&lt;Heavy /&gt;&lt;/Shell&gt;  \u2014 Heavy is not Shell's child in source; it's a prop</code></pre><p>This is why composition beats wrapping everything in one stateful component. It's also why putting <code>&lt;Heavy /&gt;</code> <i>inside</i> Shell's function body does re-render it.</p>"
+  },
+  {
+    id: "qa-useeffect-fetch-race",
+    group: "Interview::Experience",
+    question: "How do you cancel an in-flight fetch when the id changes or the component unmounts?",
+    answer: "<pre><code>useEffect(() =&gt; {\n  const ac = new AbortController();\n  fetch(`/api/${id}`, { signal: ac.signal })\n    .then(r =&gt; r.json())\n    .then(setData)\n    .catch(e =&gt; { if (e.name !== \"AbortError\") setErr(e); });\n  return () =&gt; ac.abort();\n}, [id]);</code></pre><div class=\"callout\">Without abort, a slow user A response can overwrite user B. TanStack Query and RSC loaders do this for you. Still write the AbortController version in interviews.</div>"
+  },
+  {
+    id: "qa-key-vs-id-html",
+    group: "Interview::Experience",
+    question: "Is React's <code>key</code> the same as the DOM <code>id</code>?",
+    answer: "<div class=\"callout warn\">No. <code>key</code> is a React reconciliation hint \u2014 never put on the DOM. HTML <code>id</code> is for labels, anchors, tests. <code>useId()</code> generates DOM ids, not list keys.</div>"
+  },
+  {
+    id: "qa-default-vs-named-lazy",
+    group: "Interview::Experience",
+    question: "Why does <code>React.lazy(() => import('./Button'))</code> fail if Button is a named export?",
+    answer: "<div class=\"callout warn\"><code>lazy</code> expects <code>{ default: Component }</code>. Named-only modules need a wrapper: <code>lazy(() => import('./Button').then(m => ({ default: m.Button })))</code>.</div><p>Or add a default export. Mention this \u2014 it bites people in code-splitting interviews and in real PRs.</p>"
+  },
+  {
+    id: "qa-conditional-render",
+    group: "Interview::Fundamentals",
+    question: "How do you do conditional rendering in React?",
+    answer: "<div class=\"callout good\">JSX is just expressions, so you branch with JavaScript: ternary, <code>&amp;&amp;</code>, early return, or extract a variable.</div><pre><code>{isAdmin ? &lt;Admin /&gt; : &lt;User /&gt;}\n{count &gt; 0 &amp;&amp; &lt;Badge n={count} /&gt;}\nif (!user) return &lt;Login /&gt;;\nconst body = loading ? &lt;Spinner /&gt; : &lt;List /&gt;;</code></pre><ul><li><code>&amp;&amp;</code> trap: <code>{count &amp;&amp; &lt;Badge /&gt;}</code> renders <b>0</b> when count is 0. Prefer <code>{count &gt; 0 &amp;&amp; \u2026}</code> or a ternary.</li><li>Don't hide with CSS if the subtree shouldn't mount (effects, subscriptions) \u2014 return <code>null</code>.</li><li>Switching between two component <b>types</b> unmounts state. Keep the type and pass a prop, or set a <code>key</code> if you <i>want</i> a reset.</li></ul>"
+  },
+  {
+    id: "qa-prevent-default",
+    group: "Interview::Forms & Events",
+    question: "Why do you call <code>preventDefault</code> on a form submit in React?",
+    answer: "<div class=\"callout good\">A native <code>&lt;form&gt;</code> GET/POSTs and <b>reloads the page</b>. <code>e.preventDefault()</code> keeps it a SPA mutation \u2014 you read fields and <code>setState</code> / call an Action instead.</div><pre><code>function onSubmit(e) {\n  e.preventDefault();\n  save({ email });\n}\n&lt;form onSubmit={onSubmit}&gt;\u2026&lt;/form&gt;</code></pre><p>React 19 <code>&lt;form action={fn}&gt;</code> already prevents the navigation when <code>action</code> is a function. You still <code>preventDefault</code> for <code>onSubmit</code> handlers and for links you want to hijack. <code>stopPropagation</code> is a different tool \u2014 it stops bubbling to React parents (modals, menus).</p>"
+  },
+  {
+    id: "qa-checkbox-file",
+    group: "Interview::Forms & Events",
+    question: "How do you control checkboxes, radios, and file inputs?",
+    answer: "<div class=\"cmp\"><div><h4>Checkbox / radio</h4><ul><li>Controlled: <code>checked={bool}</code> + <code>onChange={e =&gt; set(e.target.checked)}</code></li><li>Radio group: same <code>name</code>, <code>checked={value === \"a\"}</code></li><li>Don't use <code>value</code> as if it were the boolean \u2014 that's HTML, not React state</li></ul></div><div><h4>File input</h4><ul><li>Value is <b>read-only</b> in the DOM \u2014 you cannot set it from React state</li><li>Uncontrolled: <code>ref</code> or <code>onChange</code> \u2192 <code>e.target.files</code></li><li>Reset by changing <code>key</code> on the input</li></ul></div></div><p>Select: <code>value</code> + <code>onChange</code> on the <code>&lt;select&gt;</code> (or each option in a custom listbox). Multiple select: <code>multiple</code> + array state.</p>"
+  },
+  {
+    id: "qa-event-bind",
+    group: "Interview::Forms & Events",
+    question: "How do you pass arguments to an event handler without firing it during render?",
+    answer: "<div class=\"callout danger\"><code>onClick={handle(id)}</code> <b>calls handle during render</b>. Pass a function: <code>onClick={() =&gt; handle(id)}</code> or <code>onClick={handle}</code> when you need the event only.</div><pre><code>// \u2705\n&lt;button onClick={() =&gt; remove(id)}&gt;x&lt;/button&gt;\n&lt;button onClick={handleClick}&gt;ok&lt;/button&gt;\n\n// \u274c runs now, passes the return value (often undefined)\n&lt;button onClick={remove(id)}&gt;x&lt;/button&gt;</code></pre><p>In lists, an inline arrow is fine unless a <code>memo</code> child is skipping renders because of it \u2014 then <code>useCallback</code> or pass <code>id</code> via data attributes / a row component. Don't <code>.bind(this)</code> in render in new code; that's a class leftover.</p>"
+  },
+  {
+    id: "qa-useimperativehandle",
+    group: "Interview::Hooks",
+    question: "What is <code>useImperativeHandle</code> and when is it justified?",
+    answer: "<div class=\"callout good\">It customizes the instance value exposed to a parent <code>ref</code> \u2014 a small imperative escape hatch: <code>focus()</code>, <code>scrollTo()</code>, <code>play()</code> \u2014 not a second props channel.</div><pre><code>useImperativeHandle(ref, () =&gt; ({\n  focus: () =&gt; inputRef.current.focus(),\n}));</code></pre><p>If the parent can do it with props (<code>open</code>, <code>onClose</code>), use props. Imperative handles are for wrapping DOM APIs and third-party widgets. React 19 still needs a ref; you no longer need <code>forwardRef</code> on new components to receive it.</p>"
+  },
+  {
+    id: "qa-sc-architecture-walk",
+    group: "Interview::Scenarios",
+    question: "Walk me through how React is architected at a high level. What actually happens from a click to pixels on screen?",
+    answer: "<div class=\"callout good\"><b>Your tree is a function of state.</b> Components return descriptions (elements). Fiber walks that tree, diffs it, then commits a small set of DOM operations. You never patch the DOM by hand.</div><p class=\"flow-label\">The loop</p><div class=\"flow\"><div class=\"node\">Event<small>click / type / fetch</small></div><div class=\"arrow\">\u2192</div><div class=\"node accent\">setState<small>schedule update</small></div><div class=\"arrow\">\u2192</div><div class=\"node\">Render<small>call components \u2192 new tree</small></div><div class=\"arrow\">\u2192</div><div class=\"node good\">Reconcile<small>diff by type + key</small></div><div class=\"arrow good\">\u2192</div><div class=\"node good\">Commit<small>patch real DOM</small></div></div><ul><li><b>Host tree</b> (DOM / native views) is owned by React. You describe; it mutates.</li><li><b>Render phase</b> is interruptible (Fiber). <b>Commit</b> is synchronous so the user never sees a half-updated UI.</li><li><b>State location</b> decides who re-renders. A click in a leaf only re-renders that leaf <i>if the state lives there</i>. If the setter is 8 levels up, the whole subtree between owner and leaf re-renders unless you memoize or compose.</li><li>Urgent work (typing) can interrupt a transition (filtering a huge list).</li></ul><div class=\"callout\">Say this: 'React is not MVC. It is a scheduler + a reconciler + a renderer. My job is to put state in the right component and keep render pure.'</div>"
+  },
+  {
+    id: "qa-sc-parent-child",
+    group: "Interview::Scenarios",
+    question: "How do a parent and a child actually talk to each other? Can a child reach into the parent and change its state?",
+    answer: "<div class=\"callout good\"><b>Data down, events up.</b> The parent owns state and passes values as props. The child never mutates those props. To change something, it calls a callback the parent passed in \u2014 usually a setter wrapped in a handler.</div><p class=\"flow-label\">One interaction</p><div class=\"flow\"><div class=\"node accent\">Parent<small>const [q, setQ]</small></div><div class=\"arrow\">props \u2193</div><div class=\"node\">Child Search<small>value={q}</small></div><div class=\"arrow\">onChange \u2191</div><div class=\"node good\">setQ<small>parent re-renders</small></div><div class=\"arrow good\">\u2192</div><div class=\"node\">Child Results<small>new q as props</small></div></div><div class=\"cmp split\"><div><h4>Parent \u2192 child</h4><ul><li>Props: data, config, JSX slots (<code>children</code>)</li><li>Context, if many descendants need the same value</li><li>Never: child writes <code>props.user.name = \u2026</code></li></ul></div><div><h4>Child \u2192 parent</h4><ul><li>Callbacks: <code>onSelect</code>, <code>onChange</code>, <code>onClose</code></li><li>Rare: a ref + <code>useImperativeHandle</code> (<code>focus()</code>)</li><li>Never: import the parent's setter, or reach into a sibling</li></ul></div></div><pre><code>function Catalog() {\n  const [query, setQuery] = useState(\"\");\n  const [picked, setPicked] = useState(null);\n  return (\n    &lt;&gt;\n      &lt;Search value={query} onChange={setQuery} /&gt;\n      &lt;Results query={query} onPick={setPicked} /&gt;\n      {picked &amp;&amp; &lt;Detail item={picked} onClose={() =&gt; setPicked(null)} /&gt;}\n    &lt;/&gt;\n  );\n}</code></pre><p>Siblings don't talk. They share a parent. If that parent is far away, lift state, compose (<code>header={&lt;Avatar user={user} /&gt;}</code>), or use context/store \u2014 still the same rule: <b>one owner, props down, callbacks up</b>.</p>"
+  },
+  {
+    id: "qa-sc-deep-click",
+    group: "Interview::Scenarios",
+    question: "A 'Delete' button sits five levels down. The list that owns the data is at the top. How do you wire that click without making a mess?",
+    answer: "<div class=\"callout good\">You do <b>not</b> thread <code>onDelete</code> through five components that don't care. Either pass an already-built row from the top, put a stable <code>onDelete</code> in context, or let the row call a store/action.</div><ul><li><b>Composition (prefer):</b> <code>&lt;Table rows={items.map(i =&gt; &lt;Row key={i.id} item={i} onDelete={remove} /&gt;)} /&gt;</code> \u2014 middle layout components just render <code>rows</code>. They never see <code>onDelete</code>.</li><li><b>Context:</b> <code>DeleteContext</code> with a memoized <code>remove</code>. Fine when many distant widgets fire the same command. Don't put the whole list in that context or every keystroke re-renders the tree.</li><li><b>Store / server action:</b> row calls <code>deleteItem(id)</code>; the list is subscribed to that slice. Best when the list isn't even a React parent (another route, a portal).</li></ul><div class=\"callout warn\">Prop drilling through <code>Page \u2192 Layout \u2192 Card \u2192 Footer \u2192 Button</code> is the smell. If Layout only needs a slot, give it <code>children</code> or a <code>footer</code> element prop.</div>"
+  },
+  {
+    id: "qa-sc-filter-results",
+    group: "Interview::Scenarios",
+    question: "You are building a page: a search box on the left, a results table on the right, a details pane when you click a row. Where does the state live, and who fetches?",
+    answer: "<div class=\"callout good\">Sketch the tree on the whiteboard first. <b>Each piece of state lives in the lowest common owner that needs it.</b> Fetch as close to that owner as you can \u2014 or on the server above it.</div><table><tr><th>State</th><th>Owner</th><th>Why</th></tr><tr><td>Search text</td><td>page (or the search widget if results read a deferred copy)</td><td>Both filter + URL share it</td></tr><tr><td>Selected row id</td><td>page</td><td>Table and details pane both need it</td></tr><tr><td>Row list / server cache</td><td>Query hook or RSC parent</td><td>Not <code>useState</code> \u2014 it's server state</td></tr><tr><td>Details drawer open animation</td><td>the drawer</td><td>Nobody else cares</td></tr></table><ul><li>Keep the input snappy: <code>query</code> is urgent; wrap <code>setResultsFilter</code> in <code>startTransition</code> or <code>useDeferredValue</code>.</li><li>Sync filters to the URL (<code>searchParams</code>) so refresh/share works \u2014 that's also state, just in the router.</li><li>Don't fetch inside every row. Fetch the list once; fetch detail when <code>selectedId</code> changes (or include it in the list payload if it's cheap).</li></ul>"
+  },
+  {
+    id: "qa-sc-million-rows",
+    group: "Interview::Scenarios",
+    question: "The product owner says this page has to render a million records. What do you actually do?",
+    answer: "<div class=\"callout danger\"><b>You do not mount a million React rows.</b> A million <code>&lt;tr&gt;</code>s is a million fibers, a million DOM nodes, and a locked tab. React will not magically make that fine.</div><p class=\"flow-label\">Decide where the million lives</p><div class=\"cmp\"><div><h4>1. Don't send a million to the browser</h4><ul><li>That's the real answer most of the time</li><li>Server-side pagination, search, sort</li><li>Cursor / keyset pagination, not <code>OFFSET 999000</code></li><li>The UI holds one page (20\u2013100 rows) + total count</li></ul></div><div><h4>2. If they must scroll the lot</h4><ul><li><b>Windowing / virtualization:</b> only ~20\u201350 <i>visible</i> rows exist in the DOM</li><li><code>@tanstack/react-virtual</code> / <code>react-window</code></li><li>Fixed (or measured) row height; recycle cells on scroll</li><li>Still don't JSON-parse 1M fat objects on the main thread \u2014 stream / page the dataset</li></ul></div><div><h4>3. If it's analytics, not a table</h4><ul><li>Aggregate on the server (charts, histograms)</li><li>Or a canvas/WebGL grid (AG Grid, canvas tables) \u2014 not JSX per cell</li></ul></div></div><pre><code>// Mental model \u2014 visible window, not the dataset\nfunction HugeList({ rows }) {          // rows might still be too big in RAM\n  const virtualizer = useVirtualizer({\n    count: rows.length,\n    getScrollElement: () =&gt; parentRef.current,\n    estimateSize: () =&gt; 36,\n  });\n  return (\n    &lt;div ref={parentRef} style={{ height: 600, overflow: \"auto\" }}&gt;\n      &lt;div style={{ height: virtualizer.getTotalSize() }}&gt;\n        {virtualizer.getVirtualItems().map(v =&gt; (\n          &lt;Row key={v.key} row={rows[v.index]} style={{ transform: `translateY(${v.start}px)` }} /&gt;\n        ))}\n      &lt;/div&gt;\n    &lt;/div&gt;\n  );\n}</code></pre><ul><li><b>Keys:</b> stable ids, never index \u2014 recycling + index keys = swapped row state.</li><li><b>Memo the row</b> so scrolling doesn't re-render offscreen work you already skipped\u2026 but virtualization already unmounted them.</li><li><b>Don't</b> <code>rows.map</code> a million into JSX 'and then virtualize' \u2014 you already paid the render. The virtualizer must be the thing that <i>chooses</i> which indices to render.</li><li>RAM: a million JS objects with 40 fields is hundreds of MB. Pagination or a compact typed array / worker still matters even with a virtual list.</li></ul><div class=\"callout good\">Interview closer: 'I'd push back on loading 1M into the client. If we must, virtualize the window, keep the dataset off the main thread or paged, and never let a filter run a 1M <code>.filter</code> inside render without a transition or a worker.'</div>"
+  },
+  {
+    id: "qa-sc-filter-million",
+    group: "Interview::Scenarios",
+    question: "OK, you virtualized the table. Now typing in the filter freezes the page for a second. How do you find it and fix it?",
+    answer: "<div class=\"callout warn\">The freeze is almost never 'React is slow'. It is <b>you doing O(n) work on the urgent path</b> \u2014 <code>.filter</code> / sort of a huge array inside render, triggered by every keystroke.</div><ol><li><b>Prove it:</b> React Profiler while you type. If the page component is wide and yellow, look at <i>why</i> (hook 2 changed = the query string).</li><li><b>Split urgency:</b> input state updates now; filtering is a transition.<pre><code>const [q, setQ] = useState(\"\");\nconst [isPending, startTransition] = useTransition();\nconst onChange = e =&gt; {\n  const v = e.target.value;\n  setQ(v);                                  // urgent \u2014 caret stays live\n  startTransition(() =&gt; setNeedle(v));      // list may lag a frame\n};</code></pre></li><li><b>Don't filter in render</b> of a 1M array. Debounce, worker, or ask the server. Client-side, at least <code>useDeferredValue(q)</code> and memoize <code>useMemo(() =&gt; index.search(deferred), [deferred])</code>.</li><li><b>Index:</b> a prefix trie / FlexSearch / worker so you are not scanning a million strings on the main thread.</li><li>Keep the search box in its own component so its <code>useState</code> doesn't re-render the table owner on every key \u2014 table reads <code>deferredQ</code> or a store selector.</li></ol>"
+  },
+  {
+    id: "qa-sc-god-component",
+    group: "Interview::Scenarios",
+    question: "You inherit a 2,000-line <code>App.jsx</code> that fetches, filters, renders the header, the table, and three modals. How do you break it up without rewriting the product?",
+    answer: "<div class=\"callout good\">Split by <b>state ownership</b>, not by file count. Pull out pieces that can keep their own state so the leftover parent re-renders less.</div><ul><li>Extract presentational chunks first (<code>Header</code>, <code>Row</code>) \u2014 low risk, same state.</li><li>Move a modal's <code>open</code> flag <i>into</i> the modal trigger if nothing else needs it.</li><li>Search box: own its input; notify parent on submit/debounce, not per keystroke.</li><li>Data: a <code>useOrders()</code> hook or Query so fetch/error/cache leaves the JSX.</li><li>Pass <code>children</code> into a stateful shell so the expensive table is created by a parent that doesn't tick.</li></ul><pre><code>function Shell({ children }) {\n  const [tab, setTab] = useState(\"open\");\n  return (&lt;&gt;&lt;Tabs value={tab} onChange={setTab} /&gt;{children}&lt;/&gt;);\n}\n// &lt;Shell&gt;&lt;OrdersTable /&gt;&lt;/Shell&gt; \u2014 table doesn't re-render on tab chrome if you structure it this way carefully</code></pre><p>Don't start with Redux. If after the split you still have five distant writers of the same list, then a store. Interviewers want to hear 'I slice state down before I add a library'.</p>"
+  },
+  {
+    id: "qa-sc-modal-anywhere",
+    group: "Interview::Scenarios",
+    question: "Any screen in the app can open a 'Create ticket' modal. How do you architect that so every page isn't passing <code>setOpen</code> around?",
+    answer: "<ul><li><b>Don't lift <code>open</code> to <code>App</code></b> unless App is the only owner. That re-renders the world.</li><li><b>Portal + local trigger:</b> each button owns a small <code>&lt;CreateTicketButton /&gt;</code> that renders a portal. Simplest; duplicate if you have one button.</li><li><b>A tiny store / context:</b> <code>openTicketModal({ prefill })</code> + a single <code>&lt;TicketModalHost /&gt;</code> next to the router. Consumers call the function; they don't subscribe to <code>open</code> (put <code>open</code> in the host only).</li><li>URL: <code>/tickets/new</code> as a route modal (Next intercepting routes, RR). Refresh and back-button work. That's often the best 'global modal'.</li></ul><div class=\"callout\">The trick: <b>the host subscribes, the buttons dispatch</b>. If buttons <code>useContext</code> the boolean, every open/close re-renders every screen that imported the hook.</div>"
+  },
+  {
+    id: "qa-sc-parent-rerender-pain",
+    group: "Interview::Scenarios",
+    question: "The parent holds a counter in the header. Every click re-renders a heavy chart sitting next to it. Walk me through what you'd do in the room.",
+    answer: "<div class=\"callout good\">First say <i>why</i>: the chart is a function child of the component that owns <code>count</code>, so React re-invokes it. The DOM may not change; the JS still ran.</div><ol><li>Profiler: confirm the chart committed because 'parent'. Don't memo yet if the chart is cheap \u2014 but they said it's heavy.</li><li><b>Move the counter down</b> into <code>&lt;HeaderCounter /&gt;</code>. Best fix. State no longer lives next to the chart.</li><li><b>Composition:</b> <code>&lt;Layout header={&lt;Counter /&gt;}&gt;&lt;Chart data={data} /&gt;&lt;/Layout&gt;</code> \u2014 Layout's ticks don't recreate Chart if Chart is passed as <code>children</code> from a parent that didn't re-render.</li><li>Last: <code>React.memo(Chart)</code> + stable <code>data</code>. This is a band-aid if <code>data</code> is a new array every parent render.</li></ol><div class=\"callout warn\">Wrapping Chart in <code>memo</code> while the parent does <code>data={items.filter(\u2026)}</code> inline still fails. Fix identity or state location, not only <code>memo</code>.</div>"
+  },
+  {
+    id: "qa-sc-fetch-where",
+    group: "Interview::Scenarios",
+    question: "Where should this page fetch \u2014 the parent, each card, a hook, the server? We have a list of projects and each card shows the owner avatar.",
+    answer: "<table><tr><th>Choice</th><th>When it is right</th><th>When it hurts</th></tr><tr><td>Parent fetches the list (with owner already joined)</td><td>Default. One round trip. Cards are dumb.</td><td>Payload huge because you over-joined</td></tr><tr><td>Each card fetches its owner</td><td>Never as the default \u2014 N+1 in the browser</td><td>Waterfall, duplicate spinners, rate limits</td></tr><tr><td>TanStack Query per card with the same <code>['user', id]</code> key</td><td>Owner is reused in 12 places; cache dedupes</td><td>Still N requests the first time unless you prefetch</td></tr><tr><td>RSC parent <code>await db.project.findMany({ include: { owner: true }})</code></td><td>App Router. No client waterfalls.</td><td>Need a client island only for the follow button</td></tr></table><div class=\"callout good\">Rule of thumb: <b>fetch where you can see the whole picture</b> (the list owner / the server). Children receive props. Repeat fetches only with a shared cache key, not with copy-pasted <code>useEffect</code>.</div>"
+  },
+  {
+    id: "qa-sc-realtime-list",
+    group: "Interview::Scenarios",
+    question: "A WebSocket dumps order updates. The grid might have tens of thousands of rows. How do you keep this from melting the UI?",
+    answer: "<ul><li><b>Don't <code>setOrders(prev =&gt; [...prev, msg])</code> per packet.</b> Buffer in a ref, flush on <code>requestAnimationFrame</code> or every 50\u2013100ms.</li><li>Store as a <b>Map by id</b>, not an array you rebuild. Selectors return the slice the row needs.</li><li>Virtualize. A row that isn't on screen shouldn't subscribe to the full array \u2014 subscribe to <code>orders.get(id)</code> or a Zustand selector.</li><li><code>startTransition</code> for applying a batch so typing in a filter still wins.</li><li>If the socket is faster than paint, drop intermediate ticks (show latest, not every tick).</li></ul><div class=\"callout\">This is the same 1M-row story: <b>the DOM window is tiny, the model is incremental, the render is a batch</b>.</div>"
+  },
+  {
+    id: "qa-sc-pagination-vs-virtual",
+    group: "Interview::Scenarios",
+    question: "Pagination, infinite scroll, or a virtualized 1M-row grid \u2014 how do you choose in front of the interviewer?",
+    answer: "<div class=\"cmp\"><div><h4>Pagination</h4><ul><li>Default for ops tools, search, anything with sort/filter on the server</li><li>Shareable page in the URL</li><li>Predictable cost</li></ul></div><div><h4>Infinite scroll</h4><ul><li>Feeds, inboxes, mobile</li><li>Still page on the server; append</li><li>Painful to jump to row 500,000 \u2014 don't use it for that</li></ul></div><div><h4>Virtual window on a huge client cache</h4><ul><li>Excel-like sheets, log viewers, already-loaded telemetry</li><li>Needs a loaded (or seekable) dataset</li><li>Jump-to-row is a scroll offset, not a fetch \u2014 until the data isn't local</li></ul></div></div><p>For 'display 1M records' the honest sequence is: <b>server query \u2192 one page \u2192 if they insist on a spreadsheet feel, virtualize a window and load ranges on scroll (like a file seek)</b>, not one JSON blob.</p>"
+  },
+  {
+    id: "qa-sc-children-vs-render",
+    group: "Interview::Scenarios",
+    question: "I put my expensive child inside the parent JSX. A friend said 'pass it as children instead'. What are they talking about, and when does it matter?",
+    answer: "<div class=\"callout good\">If you write <code>&lt;Heavy /&gt;</code> <i>inside</i> <code>Parent</code>'s function, every Parent render creates a new element and reconciles Heavy. If the <i>caller</i> writes <code>&lt;Parent&gt;&lt;Heavy /&gt;&lt;/Parent&gt;</code>, Heavy is an element the caller already produced. Parent re-rendering (counter, toggle) reuses that same child fiber when its props didn't change.</div><pre><code>// Heavy re-renders with Parent\nfunction Parent() {\n  const [n, setN] = useState(0);\n  return (&lt;&gt;&lt;button onClick={() =&gt; setN(n+1)} /&gt;&lt;Heavy /&gt;&lt;/&gt;);\n}\n\n// Heavy does not re-render when Shell's n changes\nfunction Shell({ children }) {\n  const [n, setN] = useState(0);\n  return (&lt;&gt;&lt;button onClick={() =&gt; setN(n+1)}&gt;{n}&lt;/button&gt;{children}&lt;/&gt;);\n}\n&lt;Shell&gt;&lt;Heavy /&gt;&lt;/Shell&gt;</code></pre><p>This is how you keep a ticker or a tab bar from blowing away a dashboard. It is composition as an architecture tool, not a style preference.</p>"
+  },
+  {
+    id: "qa-sc-state-ownership",
+    group: "Interview::Scenarios",
+    question: "Give me a rule for 'who owns this state?' that you actually use on a team.",
+    answer: "<ol><li><b>If only one widget needs it, it lives there.</b> Dropdown open, local input, animation.</li><li><b>If two siblings must stay in sync, their parent owns it</b> (or the URL, or a store if the parent would become a god object).</li><li><b>If it comes from the server, it is not <code>useState</code>.</b> Query cache or RSC. Local state is for the draft, not the source of truth.</li><li><b>If it must survive refresh / share, it belongs in the URL</b> (filters, selected id, tab).</li><li><b>If 12 unrelated trees write it, a store.</b> If they only read a rare global (theme, auth), context.</li></ol><div class=\"callout good\">When unsure, start too local. Lifting is easy. Globalizing first is how you get a 400-field Redux slice and a 1s keystroke.</div>"
+  },
+  {
+    id: "qa-sc-list-row-state",
+    group: "Interview::Scenarios",
+    question: "Each row has an inline-edit input. Users complain that after sort or delete, the text jumps to another row. What went wrong in the architecture?",
+    answer: "<div class=\"callout danger\">Row state got tied to <b>position</b> (index keys, or state stored in the parent as <code>edits[0]</code>) instead of <b>identity</b> (<code>item.id</code>).</div><ul><li><code>key={index}</code> \u2014 React reuses the first fiber for whoever is now first. The input's <code>useState</code> stays on that fiber.</li><li>Fix: <code>key={order.id}</code>, and keep draft text in a map keyed by id (or inside a memoized <code>Row</code> that remounts when id changes).</li><li>If the parent stores <code>drafts: string[]</code>, sorting the list without sorting drafts desyncs them \u2014 store <code>Record&lt;id, draft&gt;</code>.</li></ul><p>Same family as the 1M-row question: <b>identity is the architecture</b>. Virtualization without stable keys will show the same bug at scroll speed.</p>"
+  },
+];
+
+function builtinQASeed() {
+  const out = {};
+  BUILTIN_QA.forEach(q => {
+    out[q.id] = { id: q.id, group: q.group, question: q.question, answer: q.answer, qa: true, builtin: true };
+  });
+  return out;
+}
+function overlayBuiltins(local, seed) {
+  const missing = [];
+  Object.keys(seed).forEach(id => {
+    if (!local[id]) missing.push(id);
+    local[id] = seed[id];
+  });
+  return missing;
+}
+function ensureMap(x) {
+  if (!x || typeof x !== "object") return {};
+  if (Array.isArray(x)) {
+    const m = {};
+    x.forEach(it => { if (it && it.id) m[it.id] = it; });
+    return m;
+  }
+  return x;
+}
+async function persistSeed(path, storageKey, local, seed) {
+  const ids = Object.keys(seed);
+  if (!ids.length) return;
+  if (SERVER) {
+    for (const id of ids) {
+      try {
+        await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(stripRuntime(seed[id])) });
+      } catch (e) {}
+    }
+  } else {
+    try { localStorage.setItem(storageKey, JSON.stringify(serializeMap(local))); } catch (e) {}
+  }
 }
 
 const escapeHtml = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
@@ -2392,7 +3259,7 @@ function qaDetailHTML(q) {
     <h2 class="term-title">${q.title}</h2>
     <div class="term-actions">
       <button class="note-action" data-act="edit-qa">&#9998; Edit</button>
-      <button class="note-action danger" data-act="delete-qa">&#128465; Delete</button>
+      ${!q.builtin ? `<button class="note-action danger" data-act="delete-qa">&#128465; Delete</button>` : ""}
     </div>
     <div class="section"><h3>Question</h3><div class="rich">${q.question || ""}</div></div>
     <div class="section"><h3>Answer</h3><div class="rich">${q.answer || ""}</div></div>
@@ -2452,7 +3319,9 @@ function createQA() {
   if (!stripHtml(question)) { qaQ.focus(); return; }   // question is required
   const group = qaGroup.value.trim() || "My Q&A";
   const id = editingQAId || uniqueQAId(slugify(stripHtml(question).slice(0, 40)) || "qa");
+  const prev = editingQAId ? qaItems[editingQAId] : null;
   const item = { id, group, question, answer: qaA.innerHTML, qa: true };
+  if (prev && prev.builtin) item.builtin = true;
   persistQA(item);
   rebuildQAData();
   refreshQAViews();
@@ -2462,6 +3331,7 @@ function createQA() {
 function deleteQA(id) {
   const q = qaItems[id];
   if (!q) return;
+  if (q.builtin) return;
   if (!confirm(`Delete this Q&A? This cannot be undone.`)) return;
   delete qaItems[id];
   if (SERVER) {
@@ -2994,7 +3864,11 @@ function highlightMatch(el, query) {
 /* ---- Init ---- */
 async function boot() {
   [customTerms, qaItems, topicItems] = await Promise.all([loadCustomTerms(), loadQA(), loadTopics()]);
-  // ensure built-in terms live in the store; seed any that are missing
+  customTerms = ensureMap(customTerms);
+  qaItems = ensureMap(qaItems);
+  topicItems = ensureMap(topicItems);
+  // HTML builtins always win in this session, then we write them to Drive so
+  // the QA sidebar is not stuck on a stale qa.json.
   const seed = builtinSeed();
   const missing = Object.keys(seed).filter(id => !customTerms[id]);
   if (missing.length) {
@@ -3007,6 +3881,9 @@ async function boot() {
       try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(serializeMap(customTerms))); } catch (e) {}
     }
   }
+  const qaSeed = builtinQASeed();
+  overlayBuiltins(qaItems, qaSeed);
+  void persistSeed("/qa", QA_KEY, qaItems, qaSeed);
   rebuildData();
   rebuildQAData();
   rebuildTopicData();

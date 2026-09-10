@@ -58,6 +58,17 @@
     --code-bg: #0b0d13;
     --code-text: #c8d3f5;
     --accent-ink: #0b0d13;
+    --ok: #3fb950;
+    --warn: #e3a008;
+    --danger: #e5534b;
+    --loop: #b692ff;
+  }
+  [data-theme="soft"], [data-theme="white"],
+  [data-theme="colorful"], [data-theme="cartoon"] {
+    --ok: #1a7f37;
+    --warn: #9a6700;
+    --danger: #cf222e;
+    --loop: #6d28d9;
   }
 
   /* ===== Moonlight ===== */
@@ -303,6 +314,152 @@
   p code, li code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; border: 1px solid var(--border); }
   pre code { line-height: 1.55; display: block; }
 
+  .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 0 0 12px; }
+  .flow .node {
+    flex: 0 1 auto; min-width: 0; padding: 8px 12px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--panel-2); color: var(--text);
+    font-size: 13.5px; font-weight: 600; line-height: 1.35;
+  }
+  .flow .node small { display: block; margin-top: 2px; font-size: 11.5px; font-weight: 400; color: var(--muted); }
+  .flow .node code { font-size: 12px; background: none; padding: 0; border: 0; color: inherit; }
+  .flow .node.accent { border-color: var(--accent); background: var(--accent-soft); }
+  .flow .node.good { border-color: var(--ok); }
+  .flow .node.bad { border-color: var(--danger); }
+  .flow .node.warn { border-color: var(--warn); }
+  .flow .node.loop { border-color: var(--loop); }
+  .flow .arrow { align-self: center; flex: 0 0 auto; color: var(--muted); font-size: 15px; }
+  .flow .arrow.good { color: var(--ok); }
+  .flow .arrow.bad { color: var(--danger); }
+  .flow-label { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 0 0 5px; }
+  .cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin: 0 0 12px; }
+  .cmp > div { border: 1px solid var(--border); border-radius: 8px; padding: 10px 13px; background: var(--panel-2); }
+  .cmp h4 { margin: 0 0 6px; font-size: 13px; }
+  .cmp.split > div:first-child { border-left: 3px solid var(--ok); }
+  .cmp.split > div:last-child { border-left: 3px solid var(--danger); }
+  .cmp ul { margin: 0; padding-left: 17px; }
+  .cmp li { font-size: 13.5px; margin-bottom: 4px; line-height: 1.5; }
+  .callout {
+    border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    background: var(--panel-2); border-radius: 0 8px 8px 0;
+    padding: 9px 13px; margin: 0 0 12px; font-size: 14px; line-height: 1.6;
+  }
+  .callout.warn { border-left-color: var(--warn); }
+  .callout.danger { border-left-color: var(--danger); }
+  .callout.good { border-left-color: var(--ok); }
+  .callout.loop { border-left-color: var(--loop); }
+  .rich ul { margin: 0; padding-left: 20px; }
+  .rich li { margin-bottom: 6px; line-height: 1.6; }
+  .rich ol { margin: 0 0 12px; padding-left: 22px; }
+  .rich ol li { margin-bottom: 8px; }
+
+  /* Nested collapsible architecture tree */
+  .nests-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+  .arch-map {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px; line-height: 1.55;
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; margin: 0 0 14px;
+    overflow-x: auto; white-space: pre;
+  }
+  .arch-map .c-core { color: var(--accent); font-weight: 700; }
+  .arch-map .c-work { color: var(--ok); font-weight: 700; }
+  .arch-map .c-th { color: var(--warn); font-weight: 700; }
+  .arch-map .c-loop { color: var(--loop); font-weight: 700; }
+  .arch-map .c-task { color: var(--ok); }
+  .arch-map .c-wait { color: var(--danger); }
+  .arch-map .c-dim { color: var(--muted); }
+  .layer {
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; margin: 0 0 10px; background: var(--panel);
+  }
+  .layer > .layer { margin: 8px 0 0; }
+  .layer-core { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+  .layer-work { border-color: var(--ok); box-shadow: inset 3px 0 0 var(--ok); }
+  .layer-th { border-color: var(--warn); box-shadow: inset 3px 0 0 var(--warn); }
+  .layer-loop { border-color: var(--loop); box-shadow: inset 3px 0 0 var(--loop); }
+  .layer-task { border-color: var(--ok); box-shadow: inset 3px 0 0 var(--ok); }
+  .layer-wait { border-color: var(--danger); box-shadow: inset 3px 0 0 var(--danger); }
+  .layer-k { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
+  .layer-core > .layer-k { color: var(--accent); }
+  .layer-work > .layer-k { color: var(--ok); }
+  .layer-th > .layer-k { color: var(--warn); }
+  .layer-loop > .layer-k { color: var(--loop); }
+  .layer-task > .layer-k { color: var(--ok); }
+  .layer-wait > .layer-k { color: var(--danger); }
+  .layer-s { font-size: 13.5px; color: var(--text); margin: 0; }
+  .layer-s small { color: var(--muted); font-weight: 400; }
+  details.nest {
+    border: 1px solid var(--border); border-radius: 0 10px 10px 0;
+    border-left: 4px solid var(--nest, var(--accent));
+    background: var(--panel); margin: 8px 0;
+  }
+  details.nest > summary {
+    cursor: pointer; padding: 10px 14px 10px 12px;
+    list-style: none; display: block;
+  }
+  details.nest > summary::-webkit-details-marker { display: none; }
+  details.nest > summary::before {
+    content: "▸"; display: inline-block; width: 1.1em;
+    color: var(--nest, var(--accent)); font-weight: 700;
+  }
+  details.nest[open] > summary::before { content: "▾"; }
+  details.nest > summary .nk {
+    font-weight: 700; font-size: 14.5px; color: var(--text);
+  }
+  details.nest > summary .nh {
+    display: block; margin: 3px 0 0 1.1em;
+    font-size: 13px; color: var(--muted); line-height: 1.45;
+  }
+  details.nest > summary .np {
+    display: block; margin: 6px 0 0 1.1em;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px; color: var(--nest, var(--accent)); line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  details.nest[open] > summary .np { opacity: .55; }
+  details.nest .nb { padding: 2px 12px 12px 16px; border-top: 1px dashed var(--border); }
+  details.nest.n-core { --nest: var(--accent); }
+  details.nest.n-work { --nest: var(--ok); }
+  details.nest.n-th { --nest: var(--warn); }
+  details.nest.n-loop { --nest: var(--loop); }
+  details.nest.n-ready { --nest: var(--ok); }
+  details.nest.n-wait { --nest: var(--danger); }
+  details.nest.n-id { --nest: var(--accent); }
+  .step {
+    display: grid; grid-template-columns: 36px 1fr; gap: 8px;
+    align-items: start; margin: 0 0 8px;
+  }
+  .step .n {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 12px; font-weight: 700;
+    background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent);
+  }
+  .step.sleep .n { background: transparent; color: var(--muted); border-color: var(--border); }
+  .step.wake .n { border-color: var(--ok); color: var(--ok); }
+  .fd-row {
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px;
+    padding: 6px 10px; margin: 0 0 6px; border-radius: 7px;
+    background: var(--panel-2); border: 1px solid var(--border);
+  }
+  .fd-row b { color: var(--accent); }
+
+  .pipe { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; align-items: center; }
+  .pipe .p {
+    border: 1px solid var(--border); background: var(--panel-2); color: var(--text);
+    border-radius: 8px; padding: 7px 10px; font-size: 12px; font-weight: 650;
+    line-height: 1.3; min-width: 0;
+  }
+  .pipe .p small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; }
+  .pipe .p.core { border-color: var(--accent); color: var(--accent); }
+  .pipe .p.work { border-color: var(--ok); color: var(--ok); }
+  .pipe .p.th { border-color: var(--warn); color: var(--warn); }
+  .pipe .p.loop { border-color: var(--loop); color: var(--loop); }
+  .pipe .p.ready { border-color: var(--ok); }
+  .pipe .p.wait { border-color: var(--danger); color: var(--danger); }
+  .pipe .arr { color: var(--muted); font-size: 14px; }
+
   /* ===== Python syntax highlighting ===== */
   /* Dark themes (default): IDE dark palette */
   .tok-kw  { color: #cc7832; font-weight: 600; }   /* keywords */
@@ -383,6 +540,11 @@
   .note-view .empty-note { color: var(--muted); }
   .rich { line-height: 1.65; font-size: 15px; }
   .rich img { max-width: 100%; border-radius: 8px; margin: 6px 0; display: block; }
+  .rich h2.th {
+    margin: 26px 0 10px; font-size: 20px; color: var(--accent); font-weight: 700;
+    border-bottom: 2px solid var(--accent-soft); padding-bottom: 5px; letter-spacing: -.02em;
+  }
+  .rich h2.th:first-child { margin-top: 4px; }
   .rich h4 { margin: 10px 0 6px; font-size: 16px; }
   .rich a { color: var(--accent); }
   .rich table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; }
@@ -1008,6 +1170,74 @@ function builtinSeed() {
   return out;
 }
 
+/* built-in topics — HTML is canonical, overlaid onto Drive/local like JavaNotes */
+const BUILTIN_TOPICS = [
+  {
+    id: "asyncio-cores-loop",
+    group: "Py Study::AsyncIO",
+    title: "Cores → Workers → One Loop → Many Requests",
+    summary: "N cores, W processes, one main thread, one event loop, many Tasks. Ready vs waiting, how await yields, and why 0xAAA is just id(task) — a heap address, not an OS id.",
+    content: "<div class=\"callout loop\"><b>The contract.</b> N cores run W Python processes. Each process has one thread and one event loop. The loop runs <b>one</b> Task at a time and parks the rest on file descriptors. <code>await</code> is not a core. <code>id(task)</code> is not a kernel id.</div>\n\n<h2 class=\"th\">1 &nbsp;The machine, one glance</h2>\n<p class=\"flow-label\">Hardware → process → thread → loop → requests</p>\n<div class=\"flow\">\n  <div class=\"node accent\">N cores<small>at most N bytecode stacks</small></div>\n  <div class=\"arrow\">→</div>\n  <div class=\"node good\">W worker processes<small>usually W ≈ N</small></div>\n  <div class=\"arrow\">→</div>\n  <div class=\"node warn\">1 main thread<small>owns the GIL</small></div>\n  <div class=\"arrow\">→</div>\n  <div class=\"node loop\">1 event loop<small>ready vs waiting</small></div>\n  <div class=\"arrow\">→</div>\n  <div class=\"node\">many Tasks<small>in flight, one running</small></div>\n</div>\n\n<div class=\"layer layer-core\">\n  <div class=\"layer-k\">Cores</div>\n  <p class=\"layer-s\">N hardware cores · at most N stacks of Python bytecode at once</p>\n  <div class=\"layer layer-work\">\n    <div class=\"layer-k\">Worker processes</div>\n    <p class=\"layer-s\">W ≈ N · each process = 1 GIL + 1 loop</p>\n    <div class=\"layer layer-th\">\n      <div class=\"layer-k\">Main thread</div>\n      <p class=\"layer-s\">The thread that owns the loop — blocking it blocks every in-flight request on this worker</p>\n      <div class=\"layer layer-loop\">\n        <div class=\"layer-k\">Event loop</div>\n        <p class=\"layer-s\">Pops ready Tasks · parks the rest in the kernel</p>\n        <div class=\"cmp\">\n          <div class=\"layer-task\" style=\"box-shadow:inset 3px 0 0 var(--ok);border:1px solid var(--border);border-radius:8px;padding:8px 10px\">\n            <div class=\"layer-k\">Ready queue</div>\n            <p class=\"layer-s\">Can run <b>right now</b>. Loop pops these, one at a time.</p>\n          </div>\n          <div class=\"layer-wait\" style=\"box-shadow:inset 3px 0 0 var(--danger);border:1px solid var(--border);border-radius:8px;padding:8px 10px\">\n            <div class=\"layer-k\">Waiting set</div>\n            <p class=\"layer-s\">Parked on I/O or a timer. The loop never polls these itself.</p>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n\n<table>\n  <tr><th>Layer</th><th>What it actually buys you</th></tr>\n  <tr><td>N cores</td><td>At most <b>N</b> stacks of Python bytecode at once</td></tr>\n  <tr><td>W processes</td><td>Usually <b>W ≈ N</b>; each owns <b>one GIL, one loop</b></td></tr>\n  <tr><td>1 loop / process</td><td>Many requests <b>concurrent</b>, <b>one running</b></td></tr>\n  <tr><td>OS time-slice</td><td>Preempts <b>among processes</b> (ms, not ns)</td></tr>\n  <tr><td><code>await</code></td><td>Switches among requests <i>inside</i> one process — <b>no extra core</b></td></tr>\n</table>\n<div class=\"callout warn\"><code>cores × workers</code> is <b>not</b> two multipliers if workers already <i>are</i> “one process per core.” You counted the same slot twice.</div>\n\n<h2 class=\"th\">2 &nbsp;N cores — parallelism, not “more awaits”</h2>\n<ul>\n  <li>CPython's GIL: <b>one thread per process</b> executes Python bytecode. Extra threads in the same process take turns; they do not multiply cores.</li>\n  <li>To use 8 cores you need <b>~8 processes</b> (Gunicorn/Uvicorn <code>-w</code>, <code>multiprocessing</code>), not 8 asyncio Tasks.</li>\n  <li>The OS still time-slices those W processes against everything else on the box.</li>\n</ul>\n<div class=\"callout warn\">A million concurrent <code>await</code>s on one worker still share <b>one core's worth of bytecode</b>. Concurrency ≠ parallelism.</div>\n\n<h2 class=\"th\">3 &nbsp;W worker processes</h2>\n<p>Often W ≈ N. Sometimes W = N−1 so the OS / reverse proxy keeps a core. Each worker is a full Python process: own memory, own GIL, own loop.</p>\n<div class=\"cmp\">\n  <div><h4>One worker is</h4><ul>\n    <li>An OS process (separate address space)</li>\n    <li>One GIL → one bytecode stack at a time</li>\n    <li>One asyncio loop on the main thread</li>\n    <li>Many Tasks in flight (I/O overlapped)</li>\n  </ul></div>\n  <div><h4>Workers do not share</h4><ul>\n    <li>Memory — no shared <code>dict</code> of requests</li>\n    <li>The GIL — each has its own</li>\n    <li>File descriptors / loop — private</li>\n    <li><code>id(task)</code> — <code>0xAAA</code> in worker 2 is a different object</li>\n  </ul></div>\n</div>\n<p class=\"flow-label\">Load balancer → workers</p>\n<div class=\"flow\">\n  <div class=\"node\">incoming HTTP</div>\n  <div class=\"arrow\">→</div>\n  <div class=\"node accent\">proxy / listen socket</div>\n  <div class=\"arrow\">→</div>\n  <div class=\"node good\">worker A<small>loop A</small></div>\n  <div class=\"node good\">worker B<small>loop B</small></div>\n  <div class=\"node good\">worker C<small>loop C</small></div>\n</div>\n<div class=\"callout\">Pick W from cores and blocking. Pure async I/O: W ≈ N. If handlers still do heavy CPU or accidental sync I/O, keep W smaller and offload CPU to a process pool — extra processes, not extra Tasks.</div>\n\n<h2 class=\"th\">4 &nbsp;One main thread (per worker)</h2>\n<p>The loop lives here. Blocking this thread blocks every in-flight request on this worker. Other threads may exist (pool, reloader) — they do not run the loop.</p>\n<div class=\"cmp split\">\n  <div><h4>Same Task (nested call)</h4><ul>\n    <li><code>await inner()</code> — inner starts <b>now</b>, same stack, same Task <code>0xAAA</code></li>\n    <li>Outer locals stay on the frame</li>\n    <li>The loop did not schedule inner</li>\n  </ul></div>\n  <div><h4>New Task (scheduled)</h4><ul>\n    <li><code>asyncio.create_task(inner())</code> — object at <code>0xBBB</code></li>\n    <li>Goes onto <b>ready</b>; loop pops it later</li>\n    <li>A can reach its next <code>await</code> without waiting for B to finish</li>\n  </ul></div>\n</div>\n<div class=\"callout danger\">Never <code>time.sleep</code>, never a sync <code>requests.get</code>, never a tight CPU loop on this thread. The waiting set cannot wake if the thread never returns to the loop.</div>\n\n<h2 class=\"th\">5 &nbsp;Ready vs waiting</h2>\n<p>One thread, one loop, many Tasks. The loop only ever runs the <b>ready</b> queue. Waiting is the kernel's job.</p>\n<div class=\"cmp split\">\n  <div><h4>Ready queue</h4><ul>\n    <li>Tasks that can run <b>right now</b></li>\n    <li>Loop pops the front, runs it</li>\n    <li>Runs until that Task hits <code>await</code> (or finishes)</li>\n    <li>Then the next ready Task — still this thread</li>\n  </ul></div>\n  <div><h4>Waiting set</h4><ul>\n    <li>Parked on a socket, DNS, sleep, future</li>\n    <li>Loop does <b>not</b> iterate them looking for work</li>\n    <li>The <b>kernel</b> watches the fds / timers</li>\n    <li>Wake → callback → Task goes back on <b>ready</b></li>\n  </ul></div>\n</div>\n\n<h2 class=\"th\">6 &nbsp;The 7 steps (one thread, forever)</h2>\n<p>If ready is empty, the thread sleeps in the kernel — <b>zero CPU</b> — until a socket or timer fires.</p>\n<div class=\"step\"><div class=\"n\">1</div><div>Pop Task A from <b>ready</b>.</div></div>\n<div class=\"step\"><div class=\"n\">2</div><div>Run A until it hits <code>await</code> (LLM / DB / HTTP / <code>asyncio.sleep</code>).</div></div>\n<div class=\"step\"><div class=\"n\">3</div><div>Park A in <b>waiting</b> — the kernel now watches that socket / timer.</div></div>\n<div class=\"step\"><div class=\"n\">4</div><div>Pop Task B from <b>ready</b>, run B until <i>its</i> <code>await</code>.</div></div>\n<div class=\"step sleep\"><div class=\"n\">5</div><div>If <b>ready is empty</b>, the thread <b>sleeps in the kernel</b>. Not a busy poll of waiting Tasks.</div></div>\n<div class=\"step wake\"><div class=\"n\">6</div><div>Socket ready → kernel wakes the thread → the registered callback fires → A goes back on <b>ready</b>.</div></div>\n<div class=\"step wake\"><div class=\"n\">7</div><div>Resume A <b>exactly after its <code>await</code></b>. Outer locals are still on the frame.</div></div>\n<div class=\"callout loop\">Many requests <i>in flight</i>, one Task <i>executing</i>. The waiting set can be huge; the ready queue is usually tiny.</div>\n\n<h2 class=\"th\">7 &nbsp;Waiting is not a dict of request ids</h2>\n<pre><code>asyncio.create_task(handle(req_1))  # Task object at 0xAAA\nasyncio.create_task(handle(req_2))  # Task object at 0xBBB</code></pre>\n<div class=\"callout danger\"><b>Not this:</b> <code>waiting[\"req-47\"] = task</code></div>\n<p>The kernel talks in file descriptors. The loop stores callbacks that know which Task to resume.</p>\n<div class=\"fd-row\"><b>fd 12</b>  →  callback that resumes Task <b>0xAAA</b>  (request 1's socket)</div>\n<div class=\"fd-row\"><b>fd 19</b>  →  callback that resumes Task <b>0xBBB</b>  (request 2's socket)</div>\n<div class=\"fd-row\"><b>timer</b>  →  callback that resumes Task <b>0xCCC</b></div>\n<div class=\"flow\">\n  <div class=\"node bad\">kernel<small>“fd 19 is readable”</small></div>\n  <div class=\"arrow good\">→</div>\n  <div class=\"node loop\">loop runs that callback</div>\n  <div class=\"arrow good\">→</div>\n  <div class=\"node good\">Task 0xBBB on ready</div>\n  <div class=\"arrow\">→</div>\n  <div class=\"node warn\">same thread resumes after await</div>\n</div>\n<p>A toy loop does the same with a pair <code>(wake_at, task)</code> — the <b>Task pointer is the id</b>. Production is kqueue / epoll / IOCP.</p>\n\n<h2 class=\"th\">8 &nbsp;What is 0xAAA?</h2>\n<div class=\"callout good\">In CPython, <code>0xAAA</code> is the <b>heap address</b> of that <code>Task</code> object. Printing it in hex is just a prettier <code>id()</code>. Not a UUID. Not an OS task id.</div>\n<pre><code>id(task)          # integer, e.g. 140123456789\nhex(id(task))     # '0xaaa...'  — same number, printed as hex\n# CPython: id(x) == address of that PyObject</code></pre>\n<table>\n  <tr><th>Layer</th><th>What it does</th></tr>\n  <tr><td>OS</td><td>Gives the <b>process</b> a virtual address space — not a per-Task id</td></tr>\n  <tr><td>CPython</td><td>Allocates the Task, then <code>id()</code> = that pointer</td></tr>\n  <tr><td>You / asyncio</td><td>Do <b>not</b> mint this number. <code>create_task</code> just constructs an object</td></tr>\n</table>\n<div class=\"cmp\">\n  <div><h4>Unique while alive</h4><p>Two live objects in this process never share an <code>id</code>.</p></div>\n  <div><h4>Reusable after GC</h4><p>When the Task is collected, that address can be given to a new object.</p></div>\n  <div><h4>Process-local</h4><p>Worker B has its own address space. <code>0xAAA</code> there is a different object.</p></div>\n  <div><h4>VM-dependent</h4><p>PyPy may use a counter. Only “unique among live objects” is required.</p></div>\n</div>\n<div class=\"callout warn\">Don't log <code>hex(id(task))</code> as a durable request id. After GC it can come back attached to someone else. Use your own UUID / <code>X-Request-Id</code>.</div>\n\n<h2 class=\"th\">9 &nbsp;Four kinds of “switching” — don't mix them</h2>\n<table>\n  <tr><th>Switch</th><th>Who</th><th>What you get</th><th>Extra core?</th></tr>\n  <tr><td><b>N cores</b></td><td>hardware</td><td>at most N bytecode stacks at once</td><td>—</td></tr>\n  <tr><td><b>W processes</b></td><td>you (gunicorn -w)</td><td>W GILs, W loops, W heaps</td><td>yes, up to min(W, N)</td></tr>\n  <tr><td><b>OS time-slice</b></td><td>kernel</td><td>those W processes take turns with everything else</td><td>no</td></tr>\n  <tr><td><b>await</b></td><td>the loop</td><td>another request on <i>this</i> worker runs</td><td><b>no</b></td></tr>\n</table>\n<div class=\"callout good\">Say this: I scale CPU with processes (W ≈ N). I scale I/O wait with Tasks on one loop. <code>await</code> is not a core. <code>id(task)</code> is not a kernel id. Waiting is epoll, not a Python dict of request keys.</div>"
+  },
+  {
+    id: "asyncio-request-flow",
+    group: "Py Study::AsyncIO",
+    title: "Async request flow — hardware → freeze → wake",
+    summary: "One ordered picture: a request arrives, becomes Task 0xAAA on ready, parks on an fd, sleeps at 0% CPU, then the kernel wakes this thread. Step-by-step from accept to GC.",
+    content: "<div class=\"callout loop\"><b>One-liner:</b> N cores run W Python processes; each process has one thread and one loop; the loop runs one Task at a time and parks the rest on fds; uniqueness is the Task's heap address plus that fd — not a request-id map, not another thread.</div>\n\n<p class=\"flow-label\">Hardware → request → freeze → wake</p>\n<div class=\"pipe\">\n  <div class=\"p core\">0 Machine<small>N · W · 1 thread · 1 loop</small></div>\n  <span class=\"arr\">→</span>\n  <div class=\"p work\">1 Arrive<small>create_task → ready</small></div>\n  <span class=\"arr\">→</span>\n  <div class=\"p\">2 0xAAA<small>heap pointer</small></div>\n  <span class=\"arr\">→</span>\n  <div class=\"p ready\">3 Ready / wait<small>fd → callback</small></div>\n  <span class=\"arr\">→</span>\n  <div class=\"p th\">4 One Task<small>inner() is a call</small></div>\n  <span class=\"arr\">→</span>\n  <div class=\"p loop\">5 Tick<small>7 steps</small></div>\n  <span class=\"arr\">→</span>\n  <div class=\"p wait\">6 Freeze<small>await vs OS</small></div>\n  <span class=\"arr\">→</span>\n  <div class=\"p\">7×100<small>in flight ≠ running</small></div>\n  <span class=\"arr\">→</span>\n  <div class=\"p work\">8 One request<small>accept → GC</small></div>\n  <span class=\"arr\">→</span>\n  <div class=\"p loop\">9 Contract<small>async / await / run / task</small></div>\n</div>\n\n<h2 class=\"th\">0 &nbsp;Machine</h2>\n<p><code>cores × workers</code> is not two multipliers if workers already are “one process per core.” That double-counts.</p>\n<table>\n  <tr><th>Layer</th><th>What it actually buys you</th></tr>\n  <tr><td>N cores</td><td>At most <b>N</b> stacks of Python bytecode at once</td></tr>\n  <tr><td>W processes</td><td>Usually <b>W ≈ N</b>; each owns <b>one GIL, one loop</b></td></tr>\n  <tr><td>1 loop / process</td><td>Many requests <b>concurrent</b>, <b>one running</b></td></tr>\n  <tr><td>OS time-slice</td><td>Preempts <b>among processes/threads</b> (ms, not ns)</td></tr>\n  <tr><td><code>await</code></td><td>Switches <b>among requests inside one process</b> — no extra core</td></tr>\n</table>\n\n<h2 class=\"th\">1 &nbsp;A request arrives</h2>\n<p>Uvicorn in this worker accepts a socket. No new thread. No request-id table for the loop. A coroutine is wrapped in a Task and dropped on ready.</p>\n<div class=\"flow\">\n  <div class=\"node\">client HTTP</div>\n  <div class=\"arrow\">→</div>\n  <div class=\"node accent\">OS socket<small>this worker accepts</small></div>\n  <div class=\"arrow\">→</div>\n  <div class=\"node loop\">create_task<small>wrap coroutine</small></div>\n  <div class=\"arrow good\">→</div>\n  <div class=\"node good\">ready queue<small>Task 0xAAA</small></div>\n</div>\n<pre><code>asyncio.create_task(handle(req_1))  # Task object at 0xAAA\nasyncio.create_task(handle(req_2))  # Task object at 0xBBB</code></pre>\n<ul>\n  <li>No new thread.</li>\n  <li>No request-id table for the loop.</li>\n  <li>Each <code>handle(...)</code> call <b>builds</b> a coroutine, wraps it in a <b>Task</b>, drops it on <b>ready</b>.</li>\n  <li>100 in-flight requests = 100 Task objects in this process's heap. Still <b>one</b> thread.</li>\n</ul>\n\n<h2 class=\"th\">2 &nbsp;What 0xAAA is</h2>\n<pre><code>id(task)       # 140123456789\nhex(id(task))  # '0xaaa...'</code></pre>\n<table>\n  <tr><th>Layer</th><th>Role</th></tr>\n  <tr><td>OS</td><td>Gives the process a <b>virtual address space</b> — not a per-Task id</td></tr>\n  <tr><td>CPython</td><td>Allocates the Task; <code>id()</code> = that <b>heap pointer</b></td></tr>\n  <tr><td>You / asyncio</td><td>Do not mint this number</td></tr>\n</table>\n<div class=\"cmp\">\n  <div><h4>Unique while alive</h4><p>Two live objects in this process never share an <code>id</code>.</p></div>\n  <div><h4>Reusable after GC</h4><p>When the Task is collected, that address can be given to a new object.</p></div>\n  <div><h4>Process-local</h4><p>Another worker has its own address space — <code>0xAAA</code> there is a different object.</p></div>\n  <div><h4>VM-dependent</h4><p>PyPy may use a counter. Only “unique among live objects” is required.</p></div>\n</div>\n<div class=\"callout warn\">Use <code>uuid</code> / <code>X-Request-Id</code> for logs. The loop uses the <b>object + fd</b>, not your hex string.</div>\n\n<h2 class=\"th\">3 &nbsp;The loop's two collections</h2>\n<p>A parked Task is not “checked.” It hangs off a Future registered with the kernel. Waiting → ready only when the kernel says the fd is readable or the timer fired.</p>\n<div class=\"cmp split\">\n  <div><h4>Ready</h4><p><code>[Req_3, Req_7]</code> — loop pops and <b>runs</b> these.</p></div>\n  <div><h4>Waiting</h4><p><code>{fd 12 → 0xAAA}</code> — loop <b>never</b> polls these.</p></div>\n</div>\n<div class=\"callout danger\"><b>Not this:</b> <code>waiting[\"req-47\"] = task</code></div>\n<div class=\"fd-row\"><b>fd 12</b>  →  callback that resumes Task <b>0xAAA</b></div>\n<div class=\"fd-row\"><b>fd 19</b>  →  callback that resumes Task <b>0xBBB</b></div>\n<div class=\"fd-row\"><b>timer</b>  →  callback that resumes Task <b>0xCCC</b></div>\n<div class=\"flow\">\n  <div class=\"node bad\">kernel<small>fd 19 readable</small></div>\n  <div class=\"arrow good\">→</div>\n  <div class=\"node loop\">callback for fd 19</div>\n  <div class=\"arrow good\">→</div>\n  <div class=\"node good\">Task 0xBBB on ready</div>\n</div>\n\n<h2 class=\"th\">4 &nbsp;One thread, one Task running</h2>\n<div class=\"callout good\"><b><code>await inner()</code> is a call, not a schedule.</b> Inner starts now, same thread, same Task, same stack. Outer is not pushed to the loop.</div>\n<ul>\n  <li>Outer's next line cannot run until inner returns (same as sync).</li>\n  <li>Locals live in the <b>coroutine frame on the heap</b>. Not “unload / reload.”</li>\n  <li>The loop only appears when something at the <b>bottom</b> really waits (<code>asyncio.sleep</code>, socket, HTTP, DB). Then the <b>whole chain</b> parks as <b>one</b> Task.</li>\n</ul>\n\n<h2 class=\"th\">5 &nbsp;Tick of the loop (the 7 steps)</h2>\n<p>Ready starts as <code>[A, B]</code>. When ready is empty the thread sleeps in the kernel — 0% CPU. Nobody is polling.</p>\n<div class=\"step\"><div class=\"n\">1</div><div><b>Pop A</b> from ready. Run A's Python.</div></div>\n<div class=\"step\"><div class=\"n\">2</div><div>A hits a <b>real</b> <code>await</code> (LLM / DB / socket). Whole chain freezes. Locals stay in Task <code>0xAAA</code>.</div></div>\n<div class=\"step\"><div class=\"n\">3</div><div><b>Park A</b> in waiting. Kernel watches <b>that</b> fd.</div></div>\n<div class=\"step\"><div class=\"n\">4</div><div><b>Pop B</b> from ready. Run B until <i>its</i> real await. Park B.</div></div>\n<div class=\"step sleep\"><div class=\"n\">5</div><div>Ready empty → thread <b>sleeps in the kernel</b> (<code>epoll_wait</code> / <code>kqueue</code>). <b>0% CPU.</b></div></div>\n<div class=\"step wake\"><div class=\"n\">6</div><div>Bytes arrive on <b>fd 19</b>. Kernel wakes <b>this</b> thread. Callback puts <b>Task 0xBBB</b> on ready. (A stays parked.)</div></div>\n<div class=\"step wake\"><div class=\"n\">7</div><div>Loop pops B, <b>resumes exactly after</b> B's <code>await</code>, same locals, same thread.</div></div>\n\n<h2 class=\"th\">6 &nbsp;Two kinds of switch — do not mix</h2>\n<div class=\"cmp split\">\n  <div><h4>OS preempts</h4><ul>\n    <li>process/thread ↔ process/thread</li>\n    <li>Can interrupt <b>any</b> bytecode</li>\n    <li>Timescale: milliseconds</li>\n    <li>How cores get shared</li>\n  </ul></div>\n  <div><h4><code>await</code> yields</h4><ul>\n    <li>request A ↔ request B</li>\n    <li>Only at a <b>real</b> await</li>\n    <li>Same process, same thread, same GIL</li>\n    <li>No extra core</li>\n  </ul></div>\n</div>\n<div class=\"callout danger\">Between two <code>await</code>s, that coroutine <b>owns the thread</b>. A blocking call (<code>time.sleep</code>, <code>requests.get</code>, heavy CPU) holds the GIL and <b>freezes every other request on this worker</b>.</div>\n\n<h2 class=\"th\">7 &nbsp;What “100 requests on one loop” means</h2>\n<table>\n  <tr><th>Word</th><th>Count</th></tr>\n  <tr><td>in flight</td><td><b>100</b> Tasks in RAM</td></tr>\n  <tr><td>running</td><td><b>1</b> — Python bytecode on this thread</td></tr>\n  <tr><td>waiting</td><td>the rest, associated by <b>fd → Task pointer</b></td></tr>\n  <tr><td>parallel</td><td>1 per process; across the box ≈ <b>min(W, N)</b> Python stacks</td></tr>\n</table>\n<div class=\"flow\">\n  <div class=\"node accent\">NIC + kernel<small>do the I/O</small></div>\n  <div class=\"arrow\">→</div>\n  <div class=\"node loop\">thread asleep<small>epoll_wait</small></div>\n  <div class=\"arrow good\">→</div>\n  <div class=\"node good\">fd/timer fires<small>one Task resumes</small></div>\n</div>\n\n<h2 class=\"th\">8 &nbsp;End-to-end, one request</h2>\n<div class=\"step\"><div class=\"n\">→</div><div>client HTTP</div></div>\n<div class=\"step\"><div class=\"n\">→</div><div>OS delivers socket to <b>one worker</b> (<code>accept</code>)</div></div>\n<div class=\"step\"><div class=\"n\">→</div><div><code>create_task(handle)</code> → Task @ <code>0xAAA</code> onto <b>READY</b></div></div>\n<div class=\"step\"><div class=\"n\">→</div><div>loop runs <code>handle</code>: parse body, locals in frame</div></div>\n<div class=\"step\"><div class=\"n\">→</div><div><code>await llm_call()</code> — inner starts immediately (same stack)</div></div>\n<div class=\"step sleep\"><div class=\"n\">❄</div><div>bottom hits socket wait · <b>WHOLE chain parks</b> · fd 12 → callback(Task 0xAAA)</div></div>\n<div class=\"step\"><div class=\"n\">→</div><div>thread runs other ready Tasks, or sleeps</div></div>\n<div class=\"step wake\"><div class=\"n\">☀</div><div>LLM bytes on fd 12 · kernel wakes thread · Task 0xAAA back on READY</div></div>\n<div class=\"step wake\"><div class=\"n\">→</div><div>resume after <code>await</code>; print / stream / return</div></div>\n<div class=\"step sleep\"><div class=\"n\">∎</div><div>Task done; object can be GC'd; address <b>may be reused</b></div></div>\n\n<h2 class=\"th\">9 &nbsp;Contract reminder</h2>\n<table>\n  <tr><th>Keyword / call</th><th>Meaning</th></tr>\n  <tr><td><code>async def</code></td><td>I <b>can</b> pause. <code>f()</code> <b>builds</b> a coroutine; it does not run.</td></tr>\n  <tr><td><code>await</code></td><td>Run it <b>here</b>, freeze <b>this</b> function until it finishes. Legal only inside <code>async def</code>.</td></tr>\n  <tr><td><code>asyncio.run</code></td><td>Sync → async door. Blocks the thread. Refuses to nest. One root per program.</td></tr>\n  <tr><td><code>create_task</code></td><td>Hand to the loop; <b>this</b> coroutine continues (overlap).</td></tr>\n</table>\n<div class=\"callout good\">Parentheses <b>build</b> the job. <code>await</code> / <code>run</code> <b>runs</b> it.</div>"
+  }
+];
+function builtinTopicSeed() {
+  const out = {};
+  BUILTIN_TOPICS.forEach(t => {
+    out[t.id] = {
+      id: t.id, group: t.group, title: t.title, summary: t.summary,
+      content: t.content, topic: true, builtin: true
+    };
+  });
+  return out;
+}
+function overlayBuiltins(local, seed) {
+  const missing = [];
+  Object.keys(seed).forEach(id => {
+    if (!local[id]) missing.push(id);
+    local[id] = seed[id];
+  });
+  return missing;
+}
+function ensureMap(x) {
+  if (!x || typeof x !== "object") return {};
+  if (Array.isArray(x)) {
+    const m = {};
+    x.forEach(it => { if (it && it.id) m[it.id] = it; });
+    return m;
+  }
+  return x;
+}
+async function persistSeed(path, storageKey, local, seed) {
+  const ids = Object.keys(seed);
+  if (!ids.length) return;
+  if (SERVER) {
+    for (const id of ids) {
+      try {
+        await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(stripRuntime(seed[id])) });
+      } catch (e) {}
+    }
+  } else {
+    try { localStorage.setItem(storageKey, JSON.stringify(serializeMap(local))); } catch (e) {}
+  }
+}
+function mountNestControls(root) {
+  const box = root && root.querySelector(".nests");
+  if (!box) return;
+  const exp = root.querySelector("[data-act=nests-expand]");
+  const col = root.querySelector("[data-act=nests-collapse]");
+  if (exp) exp.addEventListener("click", () => root.querySelectorAll("details.nest").forEach(d => { d.open = true; }));
+  if (col) col.addEventListener("click", () => root.querySelectorAll("details.nest").forEach(d => { d.open = false; }));
+}
+
+
 const escapeHtml = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 
 /* ---- Python syntax highlighter (self-contained, no deps) ---- */
@@ -1257,7 +1487,9 @@ function selectTopic(id) {
   showTab("glossary");
   markActive(id);
   detail.innerHTML = topicDetailHTML(t);
+  highlightBlocks(detail);
   mountTopicActions(detail, id);
+  mountNestControls(detail);
   mountNotes(detail, topicNoteId(id), "topics");
   history.replaceState(null, "", "#topic/" + id);
   document.getElementById("main").scrollTop = 0;
@@ -2348,9 +2580,9 @@ function topicDetailHTML(t) {
     ${t.summary ? `<p class="lede">${t.summary}</p>` : ""}
     <div class="term-actions">
       <button class="note-action" data-act="edit-topic">&#9998; Edit</button>
-      <button class="note-action danger" data-act="delete-topic">&#128465; Delete</button>
+      ${!t.builtin ? `<button class="note-action danger" data-act="delete-topic">&#128465; Delete</button>` : ""}
     </div>
-    ${t.content ? `<div class="section"><h3>Content</h3><div class="rich">${t.content}</div></div>` : ""}
+    ${t.content ? `<div class="section"><div class="rich">${t.content}</div></div>` : ""}
     ${notesSectionHTML()}
   `;
 }
@@ -2366,7 +2598,9 @@ function openTopicDrawer(id) {
   if (!t) return;
   drawerTag.textContent = t._group ? t._group.tag : t.group;
   drawerBody.innerHTML = topicDetailHTML(t);
+  highlightBlocks(drawerBody);
   mountTopicActions(drawerBody, id);
+  mountNestControls(drawerBody);
   mountNotes(drawerBody, topicNoteId(id), "topics");
   drawerBody.scrollTop = 0;
   backdrop.classList.add("open");
@@ -2413,8 +2647,10 @@ function createTopic() {
   if (!title) { topicTitle.focus(); return; }             // title is required
   const group = topicGroup.value.trim() || "My Topics";
   const id = editingTopicId || uniqueTopicId(slugify(title.slice(0, 40)) || "topic");
+  const prev = editingTopicId ? topicItems[editingTopicId] : null;
   const item = { id, group, title, summary: topicSummary.value.trim(),
                  content: topicContent.innerHTML, topic: true };
+  if (prev && prev.builtin) item.builtin = true;
   persistTopic(item);
   rebuildTopicData();
   refreshTopicViews();
@@ -2424,6 +2660,7 @@ function createTopic() {
 function deleteTopic(id) {
   const t = topicItems[id];
   if (!t) return;
+  if (t.builtin) return;
   if (!confirm(`Delete this topic? This cannot be undone.`)) return;
   delete topicItems[id];
   if (SERVER) {
@@ -2806,6 +3043,9 @@ function highlightMatch(el, query) {
 /* ---- Init ---- */
 async function boot() {
   [customTerms, qaItems, topicItems] = await Promise.all([loadCustomTerms(), loadQA(), loadTopics()]);
+  customTerms = ensureMap(customTerms);
+  qaItems = ensureMap(qaItems);
+  topicItems = ensureMap(topicItems);
   // ensure built-in terms live in the store; seed any that are missing
   const seed = builtinSeed();
   const missing = Object.keys(seed).filter(id => !customTerms[id]);
@@ -2819,6 +3059,8 @@ async function boot() {
       try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(serializeMap(customTerms))); } catch (e) {}
     }
   }
+  const topicSeed = builtinTopicSeed();
+  overlayBuiltins(topicItems, topicSeed);
   rebuildData();
   rebuildQAData();
   rebuildTopicData();
@@ -2834,6 +3076,7 @@ async function boot() {
   btnTree.classList.toggle("active", savedView === "tree");
   btnFlat.classList.toggle("active", savedView !== "tree");
   renderSidebar(savedView);
+  void persistSeed("/topics", TOPIC_KEY, topicItems, topicSeed);
   const initial = location.hash.slice(1);
   if (initial === "docs") {                       // the Docs landing list
     await loadDocs();
