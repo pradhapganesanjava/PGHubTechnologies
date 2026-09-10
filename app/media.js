@@ -139,17 +139,38 @@ async function buildHtmlDoc(id, blob) {
  */
 const BACK_BAR = `
 <style>
-  #pghub-back{
+  #pghub-back-wrap{
     position:fixed;left:14px;bottom:14px;z-index:2147483647;
-    font:600 13px/1 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    padding:10px 15px;border-radius:999px;border:1px solid rgba(255,255,255,.16);
-    background:#14181f;color:#fff;cursor:pointer;box-shadow:0 3px 14px rgba(0,0,0,.3);
+    display:flex;align-items:center;gap:8px;
+  }
+  #pghub-back{
+    width:38px;height:38px;padding:0;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid rgba(255,255,255,.16);background:#14181f;color:#fff;
+    cursor:pointer;box-shadow:0 3px 14px rgba(0,0,0,.3);
   }
   #pghub-back:hover{background:#2b333f}
   #pghub-back:focus-visible{outline:2px solid #6ea8fe;outline-offset:2px}
-  @media print{#pghub-back{display:none!important}}
+  #pghub-back-tip{
+    opacity:0;transition:opacity .12s;pointer-events:none;white-space:nowrap;
+    font:600 12px/1 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#14181f;color:#fff;border:1px solid rgba(255,255,255,.16);
+    border-radius:6px;padding:6px 9px;box-shadow:0 3px 14px rgba(0,0,0,.3);
+  }
+  #pghub-back-wrap:hover #pghub-back-tip,
+  #pghub-back:focus-visible + #pghub-back-tip{opacity:1}
+  @media print{#pghub-back-wrap{display:none!important}}
 </style>
-<button id="pghub-back" type="button" title="Back to the module (Esc)">&#8592; Back</button>
+<div id="pghub-back-wrap">
+  <button id="pghub-back" type="button" aria-label="Back" aria-describedby="pghub-back-tip">
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M9.5 15 4.5 10l5-5"/>
+      <path d="M4.5 10H14a5.5 5.5 0 0 1 0 11h-3.5"/>
+    </svg>
+  </button>
+  <span id="pghub-back-tip" role="tooltip">Back</span>
+</div>
 <script>
 (function () {
   var b = document.getElementById('pghub-back');
