@@ -1005,8 +1005,40 @@ const BUILTIN_GROUPS = [
           "You cannot overload on <code>List&lt;String&gt;</code> vs <code>List&lt;Integer&gt;</code> — same erased signature.",
           "<code>List&lt;Object&gt;</code> is <b>not</b> a supertype of <code>List&lt;String&gt;</code>; that is what wildcards are for."
         ],
+        ask: [
+          {"q": "What does <code>&lt;? extends T&gt;</code> vs <code>&lt;? super T&gt;</code> mean?", "a": "<b>PECS.</b> <code>? extends T</code> is a producer you <b>read</b> as <code>T</code> — you cannot add (except <code>null</code>). <code>? super T</code> is a consumer you <b>write</b> <code>T</code> into — <code>get</code> is only <code>Object</code>. See <i>Bounded Wildcards (PECS)</i>."}
+        ],
         code: "static <T extends Comparable<T>> T max(List<T> xs) {\n  T best = xs.get(0);\n  for (T x : xs) if (x.compareTo(best) > 0) best = x;\n  return best;\n}",
-        related: ["collections", "interface", "object-class"]
+        related: ["pecs-wildcards", "collections", "interface", "object-class"]
+      },
+      {
+        id: "pecs-wildcards",
+        title: "Bounded Wildcards (PECS)",
+        lede: "<code>? extends T</code> is a producer you read from. <code>? super T</code> is a consumer you write to. Neither means \"a list that holds every subtype.\"",
+        flow: "<p class=\"flow-label\">PECS — Producer Extends, Consumer Super</p>\n<div class=\"flow\">\n  <div class=\"node good\"><code>List&lt;? extends Number&gt;</code><small>producer — <code>get</code> as Number</small></div>\n  <div class=\"arrow good\">→ read</div>\n  <div class=\"node accent\">your method</div>\n  <div class=\"arrow\">write →</div>\n  <div class=\"node\"><code>List&lt;? super Integer&gt;</code><small>consumer — <code>add</code> Integer</small></div>\n</div>\n<div class=\"callout\"><b>The <code>?</code> is one unknown concrete type.</b> The list is a <code>List&lt;Integer&gt;</code> <i>or</i> a <code>List&lt;Double&gt;</code> — the compiler will not let you do anything that is unsafe for either.</div>",
+        what: "<p><code>List&lt;? extends Number&gt;</code> does <b>not</b> mean \"add any Number.\" It means \"a list of <i>some unknown subtype</i> of Number.\" You may take elements out as <code>Number</code>. You may not put them in (except <code>null</code>), because the real list might be <code>List&lt;Integer&gt;</code> and adding a <code>Double</code> would corrupt it.</p>\n<div class=\"cmp split\">\n  <div>\n    <h4><code>? extends T</code> — producer</h4>\n    <ul>\n      <li>You <b>get</b> values typed as <code>T</code></li>\n      <li><code>add</code> is illegal (except <code>null</code>)</li>\n      <li>Accepts <code>List&lt;Integer&gt;</code>, <code>List&lt;Double&gt;</code>, <code>List&lt;Number&gt;</code></li>\n      <li>Use on method <b>inputs you only read</b></li>\n    </ul>\n  </div>\n  <div>\n    <h4><code>? super T</code> — consumer</h4>\n    <ul>\n      <li>You <b>add</b> <code>T</code> (and subtypes of <code>T</code>)</li>\n      <li><code>get</code> is only <code>Object</code></li>\n      <li>Accepts <code>List&lt;T&gt;</code>, <code>List&lt;Object&gt;</code>, any supertype of <code>T</code></li>\n      <li>Use on method <b>outputs you only write</b></li>\n    </ul>\n  </div>\n</div>\n<p class=\"flow-label\">What you can do with a Number list</p>\n<table>\n  <tr><th>Declaration</th><th>Add</th><th>Get as</th></tr>\n  <tr><td><code>List&lt;Number&gt;</code></td><td>Number and all subtypes</td><td><code>Number</code></td></tr>\n  <tr><td><code>List&lt;? extends Number&gt;</code></td><td><code>null</code> only</td><td><code>Number</code></td></tr>\n  <tr><td><code>List&lt;? super Number&gt;</code></td><td>Number and subtypes</td><td><code>Object</code></td></tr>\n  <tr><td><code>List&lt;Integer&gt;</code></td><td>Integer only</td><td><code>Integer</code></td></tr>\n</table>\n<div class=\"callout warn\">Java generics are <b>invariant</b>: <code>List&lt;Integer&gt;</code> is not a <code>List&lt;Number&gt;</code>. Wildcards exist so a method that only <i>reads</i> numbers can still accept <code>List&lt;Integer&gt;</code>.</div>",
+        why: "<ul>\n  <li>Without wildcards, <code>void sum(List&lt;Number&gt; nums)</code> refuses <code>List&lt;Integer&gt;</code> — even though every element <i>is</i> a Number.</li>\n  <li>That refusal is correct if the method might <code>add</code>: putting a <code>Double</code> into an Integer list must not compile.</li>\n  <li>If the method only reads, the fear is gone. <code>List&lt;? extends Number&gt;</code> is how you tell the compiler that.</li>\n  <li>The JDK is built this way: <code>addAll(Collection&lt;? extends E&gt;)</code>, <code>Collections.max</code>, <code>copy</code>.</li>\n</ul>",
+        apply: [
+          "On a parameter you only iterate or copy <b>from</b>: <code>List&lt;? extends T&gt;</code>.",
+          "On a parameter you only <code>add</code> <b>to</b>: <code>List&lt;? super T&gt;</code>.",
+          "If you both read and write, use the exact type: <code>List&lt;Number&gt;</code>.",
+          "Do not put <code>? extends</code> on a field you own and plan to fill — callers cannot add.",
+          "Remember: <code>List&lt;? extends Number&gt;</code> is a flexible <b>input</b> type, not a flexible storage type."
+        ],
+        gotcha: [
+          "<code>List&lt;? extends Number&gt; nums = new ArrayList&lt;Integer&gt;()</code> — <code>nums.add(1)</code>, <code>add(1.5)</code> and even <code>add((Number) 1)</code> are all compile errors. Only <code>null</code> is allowed.",
+          "<code>get</code> on <code>List&lt;? super Integer&gt;</code> is <code>Object</code>, not <code>Integer</code> or <code>Number</code> — you gave away the element type in exchange for the right to add.",
+          "A field typed <code>List&lt;? extends Number&gt;</code> is usually a bad API: it looks like a Number list and behaves like a read-only view of an unknown subtype list.",
+          "PECS is for <b>use-site</b> wildcards on parameters. A type parameter bound <code>&lt;T extends Number&gt;</code> is a different thing — that names the type so you can both get and add <code>T</code>."
+        ],
+        ask: [
+          {"q": "Can you add an Integer to <code>List&lt;? extends Number&gt;</code>?", "a": "No. The real list might be <code>List&lt;Double&gt;</code>. The only legal <code>add</code> is <code>null</code>. You <b>get</b> as <code>Number</code>."},
+          {"q": "Then when do you need <code>List&lt;? extends Number&gt;</code>?", "a": "As a <b>method parameter you only read</b>, so <code>List&lt;Integer&gt;</code> and <code>List&lt;Double&gt;</code> can both be passed. It is not a list you fill."},
+          {"q": "What does PECS stand for?", "a": "<b>Producer Extends, Consumer Super.</b> Producer = you take <code>T</code> out (<code>? extends T</code>). Consumer = you put <code>T</code> in (<code>? super T</code>)."},
+          {"q": "How do you copy Integers into a List of Number or Object?", "a": "<code>void copy(List&lt;? extends Integer&gt; src, List&lt;? super Integer&gt; dest)</code> — read from a producer, write to a consumer."}
+        ],
+        code: "// ? extends — read any list whose elements are some kind of Number\nstatic double sum(List<? extends Number> src) {\n    double s = 0;\n    for (Number n : src) s += n.doubleValue();   // get as Number\n    return s;\n}\nsum(List.of(1, 2, 3));          // List<Integer>  — ok\nsum(List.of(1.5, 2.5));         // List<Double>   — ok\n\n// ? super — write Integers into a list of Integer, Number, or Object\nstatic void fill(List<? super Integer> dest) {\n    dest.add(1);\n    dest.add(2);\n    // Integer n = dest.get(0);  // error — get is Object\n}\nfill(new ArrayList<Integer>());\nfill(new ArrayList<Number>());\nfill(new ArrayList<Object>());\n\n// both together — the classic copy\nstatic void copy(List<? extends Number> src, List<? super Number> dest) {\n    for (Number n : src) dest.add(n);\n}\nList<Integer> ints = List.of(1, 2, 3);\nList<Object> sink = new ArrayList<>();\ncopy(ints, sink);\n\nList<? extends Number> produced = ints;\nNumber n = produced.get(0);     // ok\n// produced.add(1);             // error — unknown subtype",
+        related: ["generics", "collections"]
       },
       {
         id: "collections",
@@ -1027,7 +1059,36 @@ const BUILTIN_GROUPS = [
           "<code>LinkedList</code> is almost never the right answer in practice; <code>ArrayDeque</code> beats it as a queue/stack."
         ],
         code: "Map<String,Integer> counts = new HashMap<>();\nfor (String w : words)\n  counts.merge(w, 1, Integer::sum);   // count occurrences",
-        related: ["generics", "interface", "object-class"]
+        related: ["string-intern", "generics", "interface", "object-class"]
+      },
+      {
+        id: "string-intern",
+        title: "String intern & the pool",
+        lede: "Literals already share one pooled object. <code>intern()</code> is for a <b>small, repeating</b> vocabulary — not a switch that makes every string cheaper, and not a string-to-boolean conversion.",
+        flow: "<p class=\"flow-label\">A literal is interned at class load — one object for every <code>\"OK\"</code></p>\n<div class=\"flow\">\n  <div class=\"node\"><code>\"OK\"</code><small>source literal</small></div>\n  <div class=\"arrow\">→</div>\n  <div class=\"node accent\">string pool<small>intern table</small></div>\n  <div class=\"arrow\">→</div>\n  <div class=\"node good\">one shared instance<small>all literals of that content</small></div>\n</div>\n<p class=\"flow-label\"><code>new String</code> is a copy; <code>intern()</code> asks the pool for the shared one</p>\n<div class=\"flow\">\n  <div class=\"node warn\"><code>new String(\"OK\")</code><small>a second object</small></div>\n  <div class=\"arrow\">→</div>\n  <div class=\"node\"><code>.intern()</code></div>\n  <div class=\"arrow good\">→</div>\n  <div class=\"node good\">pooled <code>\"OK\"</code><small>or this content is added to the pool</small></div>\n</div>\n<div class=\"callout\"><b>The pool reuses identical interned strings.</b> It does not convert a string to a boolean. <code>==</code> after intern is an identity check that happens to return <code>boolean</code>.</div>",
+        what: "<p>Java keeps a <b>string pool</b> (intern table). A literal is interned when the class loads, so every <code>\"OK\"</code> in the program is one object. <code>new String(\"OK\")</code> allocates a copy. <code>s.intern()</code> returns the pooled instance if that content is already there; otherwise it puts this content in the pool and returns that.</p>\n<div class=\"cmp split\">\n  <div>\n    <h4>What intern <i>is</i></h4>\n    <ul>\n      <li>Share one instance for the same character content</li>\n      <li>Worth it for a <b>bounded vocabulary</b> that appears thousands of times: <code>GET</code>, <code>USD</code>, status codes</li>\n      <li>Literals are interned already — you do not intern those</li>\n    </ul>\n  </div>\n  <div>\n    <h4>What intern is <i>not</i></h4>\n    <ul>\n      <li>Not a string → boolean conversion</li>\n      <li>Not a reason to write <code>if (s == \"OK\")</code> in production — still use <code>.equals()</code></li>\n      <li>Not a win on unique values (UUIDs, request ids, log lines) — those <b>fill the pool</b></li>\n    </ul>\n  </div>\n</div>\n<p class=\"flow-label\">Claim vs reality</p>\n<table>\n  <tr><th>Claim</th><th>Reality</th></tr>\n  <tr><td>Intern most strings to save memory</td><td>Only a <b>small, repeating</b> set. High-cardinality intern looks like a leak.</td></tr>\n  <tr><td>Intern turns a string into a boolean</td><td>It returns a <code>String</code>. <code>==</code> is a separate identity test.</td></tr>\n  <tr><td>Prefer <code>==</code> after intern</td><td>Production still uses <code>.equals()</code>. <code>==</code> is a micro-optimization and a footgun.</td></tr>\n  <tr><td>You must intern literals</td><td>You must not. The compiler/class loader already did.</td></tr>\n</table>\n<div class=\"callout warn\">Interned strings live on the heap (not PermGen). The intern <i>table</i> still holds a reference. Interning unbounded input is a GC-root leak with extra steps.</div>",
+        why: "<ul>\n  <li>Interviewers use intern to check whether you know literals are already pooled, and whether you would intern user input (you would not).</li>\n  <li>A handful of repeated protocol tokens can drop millions of duplicate <code>String</code> objects.</li>\n  <li>For a few known values, an <code>enum</code>, a <code>record</code>, or a <code>boolean</code>/<code>int</code> flag is a better model than interned strings.</li>\n</ul>",
+        apply: [
+          "Do nothing for literals — they are already interned.",
+          "Intern only <b>your</b> small, hot, repeating vocabulary (parsers, wire protocols), not every allocated string.",
+          "Always compare with <code>.equals()</code> (or <code>Objects.equals</code>) unless you have measured a reason not to.",
+          "Never intern UUIDs, request ids, JSON field values, or cache keys with high cardinality.",
+          "Prefer an <code>enum</code> over interned magic strings when the set is closed."
+        ],
+        gotcha: [
+          "<code>new String(\"x\")</code> is never the pooled object until you intern it — that is the whole point of the interview snippet.",
+          "Interning unique strings pins them in the intern table; they survive far longer than a normal heap object.",
+          "<code>==</code> after intern is identity, not a type conversion. A typo or a substring that was not interned makes <code>==</code> silently false.",
+          "G1/ZGC can collect unused interned strings, but the table lookup and the native intern lock still cost — intern is not free."
+        ],
+        ask: [
+          {"q": "Are string literals interned automatically?", "a": "Yes. Every <code>\"OK\"</code> in the class is one pooled object. You intern <code>new String(...)</code> or strings you built at runtime, not literals."},
+          {"q": "Should you intern most frequently used strings to save memory?", "a": "Only a <b>small, repeating</b> set. Interning high-cardinality values fills the pool and can look like a leak. Literals are already interned."},
+          {"q": "Does intern convert a string to a boolean?", "a": "No. It returns a <code>String</code>. <code>==</code> after intern is an identity check. Production code still uses <code>.equals()</code>."},
+          {"q": "When is intern the wrong tool?", "a": "User input, UUIDs, request ids, JSON values, unbounded cache keys. Use <code>enum</code> / flags when the set is closed."}
+        ],
+        code: "String a = \"OK\";\nString b = \"OK\";\nString c = new String(\"OK\");\n\na == b;              // true  — same pooled object\na == c;              // false — c is a copy on the heap\na == c.intern();     // true  — intern found the pooled \"OK\"\na.equals(c);         // true  — always compare content this way\n\n// worth intern: a handful of protocol tokens, thousands of times\nString method = rawMethod.intern();   // GET / POST / PUT / DELETE\n\n// not worth intern: unique per request\n// id.intern();   // fills the pool — a leak",
+        related: ["object-class", "garbage-collection", "heap-stack", "collections"]
       }
     ]
   },
@@ -1059,7 +1120,7 @@ const BUILTIN_GROUPS = [
       {
         id: "garbage-collection",
         title: "Garbage Collection",
-        lede: "Automatic reclamation of heap memory no longer reachable from live references — you allocate, the JVM frees.",
+        lede: "Automatic reclamation of heap memory no longer reachable from live references — you allocate, the JVM frees. A leak is a forgotten reference, not a collector bug. Open <b>Topics → GC — Memory Leaks</b> for leak vs fix code.",
         flow: "<div class=\"flow\">\n<div class=\"node accent\">GC roots<small>stack refs, statics</small></div>\n<div class=\"arrow\">→</div>\n<div class=\"node good\">Reachable<small>kept</small></div>\n<div class=\"node ghost\">Unreachable<small>collected</small></div>\n</div>\n<div class=\"callout\">Nothing is freed because it went out of scope — only because it became <b>unreachable from a root</b>.</div>",
         what: "<ul><li><b>Generational</b>: most objects die young, so the young gen is collected often and cheaply.</li><li>Survivors are promoted to the old gen, collected less often but more expensively.</li><li>Modern collectors are mostly <b>concurrent</b>: <code>G1</code> (balanced default), <code>ZGC</code> and <code>Shenandoah</code> (sub-millisecond pauses).</li><li>A <b>stop-the-world</b> pause halts every application thread — the thing you are tuning against.</li></ul>",
         why: "<ul><li>Removes manual <code>free()</code> and a whole class of use-after-free bugs.</li><li>It is not magic: a <b>leak</b> is just a reference you forgot to drop.</li><li>GC behaviour is usually what people actually mean by \"the JVM is slow\".</li></ul>",
@@ -1654,6 +1715,409 @@ const BUILTIN_GROUPS = [
   }
 ];
 
+/* built-in Q&A — seeded into qa.json / localStorage the same way terms are */
+const BUILTIN_QA = [
+  {
+    id: "generics-extends-vs-super",
+    group: "Interview::Generics",
+    question: "Generics: what does <code>&lt;? extends T&gt;</code> vs <code>&lt;? super T&gt;</code> mean?",
+    answer:
+      "<div class=\"callout good\"><b>PECS — Producer Extends, Consumer Super.</b> " +
+      "<code>? extends T</code> is a producer you <b>read</b>. " +
+      "<code>? super T</code> is a consumer you <b>write</b>. " +
+      "Neither means \"a list that holds every subtype.\"</div>" +
+
+      "<p class=\"flow-label\">One method, two directions</p>" +
+      "<div class=\"flow\">" +
+      "<div class=\"node good\"><code>List&lt;? extends Number&gt;</code><small>producer — <code>get</code> as Number</small></div>" +
+      "<div class=\"arrow good\">→ read</div>" +
+      "<div class=\"node accent\">your method</div>" +
+      "<div class=\"arrow\">write →</div>" +
+      "<div class=\"node\"><code>List&lt;? super Integer&gt;</code><small>consumer — <code>add</code> Integer</small></div>" +
+      "</div>" +
+      "<div class=\"callout\"><b>The <code>?</code> is one unknown concrete type.</b> " +
+      "The list is a <code>List&lt;Integer&gt;</code> <i>or</i> a <code>List&lt;Double&gt;</code> — " +
+      "the compiler will not let you do anything that is unsafe for either.</div>" +
+
+      "<div class=\"cmp split\">" +
+      "<div><h4><code>? extends T</code> — producer</h4><ul>" +
+      "<li>You <b>get</b> values typed as <code>T</code></li>" +
+      "<li><code>add</code> is illegal (except <code>null</code>)</li>" +
+      "<li>Accepts <code>List&lt;Integer&gt;</code>, <code>List&lt;Double&gt;</code>, <code>List&lt;Number&gt;</code></li>" +
+      "<li>Use on method <b>inputs you only read</b></li>" +
+      "</ul></div>" +
+      "<div><h4><code>? super T</code> — consumer</h4><ul>" +
+      "<li>You <b>add</b> <code>T</code> (and subtypes of <code>T</code>)</li>" +
+      "<li><code>get</code> is only <code>Object</code></li>" +
+      "<li>Accepts <code>List&lt;T&gt;</code>, <code>List&lt;Object&gt;</code>, any supertype of <code>T</code></li>" +
+      "<li>Use on method <b>outputs you only write</b></li>" +
+      "</ul></div></div>" +
+
+      "<p><code>List&lt;? extends Number&gt;</code> does <b>not</b> mean \"add any Number.\" " +
+      "It means \"a list of <i>some unknown subtype</i> of Number.\" " +
+      "You get as <code>Number</code>. You cannot add, because the real list might be " +
+      "<code>List&lt;Integer&gt;</code> and adding a <code>Double</code> would corrupt it.</p>" +
+
+      "<p class=\"flow-label\">What you can do</p>" +
+      "<table><tr><th>Declaration</th><th>Add</th><th>Get as</th></tr>" +
+      "<tr><td><code>List&lt;Number&gt;</code></td><td>Number and all subtypes</td><td><code>Number</code></td></tr>" +
+      "<tr><td><code>List&lt;? extends Number&gt;</code></td><td><code>null</code> only</td><td><code>Number</code></td></tr>" +
+      "<tr><td><code>List&lt;? super Number&gt;</code></td><td>Number and subtypes</td><td><code>Object</code></td></tr>" +
+      "<tr><td><code>List&lt;Integer&gt;</code></td><td>Integer only</td><td><code>Integer</code></td></tr></table>" +
+
+      "<div class=\"callout warn\">Java generics are <b>invariant</b>: " +
+      "<code>List&lt;Integer&gt;</code> is not a <code>List&lt;Number&gt;</code>. " +
+      "That is why <code>void sum(List&lt;Number&gt;)</code> refuses a <code>List&lt;Integer&gt;</code>. " +
+      "If the method only <i>reads</i>, switch the parameter to " +
+      "<code>List&lt;? extends Number&gt;</code> and both Integer and Double lists compile.</div>" +
+
+      "<p class=\"flow-label\">When you need <code>? extends</code></p>" +
+      "<p>As a <b>method parameter you only read</b> — so <code>List&lt;Integer&gt;</code> and " +
+      "<code>List&lt;Double&gt;</code> can both be passed. It is a flexible <b>input</b> type, " +
+      "not a flexible storage type. If you both read and write, use the exact type " +
+      "<code>List&lt;Number&gt;</code>.</p>" +
+
+      "<pre><code>" +
+      "// ? extends — read any list whose elements are some kind of Number\n" +
+      "static double sum(List&lt;? extends Number&gt; src) {\n" +
+      "    double s = 0;\n" +
+      "    for (Number n : src) s += n.doubleValue();   // get as Number\n" +
+      "    return s;\n" +
+      "}\n" +
+      "sum(List.of(1, 2, 3));          // List&lt;Integer&gt;  — ok\n" +
+      "sum(List.of(1.5, 2.5));         // List&lt;Double&gt;   — ok\n" +
+      "\n" +
+      "// ? super — write Integers into Integer, Number, or Object\n" +
+      "static void fill(List&lt;? super Integer&gt; dest) {\n" +
+      "    dest.add(1);\n" +
+      "    dest.add(2);\n" +
+      "    // Integer n = dest.get(0);  // error — get is Object\n" +
+      "}\n" +
+      "fill(new ArrayList&lt;Integer&gt;());\n" +
+      "fill(new ArrayList&lt;Number&gt;());\n" +
+      "fill(new ArrayList&lt;Object&gt;());\n" +
+      "\n" +
+      "// both together — the classic copy\n" +
+      "static void copy(List&lt;? extends Number&gt; src,\n" +
+      "                 List&lt;? super Number&gt; dest) {\n" +
+      "    for (Number n : src) dest.add(n);\n" +
+      "}\n" +
+      "List&lt;Integer&gt; ints = List.of(1, 2, 3);\n" +
+      "List&lt;Object&gt; sink = new ArrayList&lt;&gt;();\n" +
+      "copy(ints, sink);\n" +
+      "</code></pre>" +
+
+      "<div class=\"callout danger\"><code>nums.add(1)</code> on a " +
+      "<code>List&lt;? extends Number&gt;</code> does not compile — not even " +
+      "<code>add((Number) 1)</code>. Only <code>null</code> is allowed.</div>"
+  },
+  {
+    id: "which-gc-how-to-set",
+    group: "Interview::JVM",
+    question: "Which garbage collector would you choose, and how/where do you set it?",
+    answer:
+      "<div class=\"callout good\"><b>Pick by the pause you can tolerate, not by fashion.</b> " +
+      "<code>G1</code> is the default for a reason. Switch to <code>ZGC</code> (or Shenandoah) when " +
+      "tail latency matters more than a bit of throughput. Measure before you swap.</div>" +
+
+      "<p class=\"flow-label\">Choose by goal</p>" +
+      "<div class=\"flow\">" +
+      "<div class=\"node\">What hurts?<small>pause vs throughput vs tiny heap</small></div>" +
+      "<div class=\"arrow\">→</div>" +
+      "<div class=\"node good\">G1<small>default · balanced</small></div>" +
+      "<div class=\"node accent\">ZGC / Shenandoah<small>sub-ms pauses</small></div>" +
+      "<div class=\"node\">Parallel<small>batch / max throughput</small></div>" +
+      "<div class=\"node ghost\">Serial<small>small heap, 1 CPU</small></div>" +
+      "</div>" +
+
+      "<div class=\"cmp\">" +
+      "<div><h4>G1 — start here</h4><ul>" +
+      "<li>Default since <b>Java 9</b></li>" +
+      "<li>Region-based, mostly concurrent</li>" +
+      "<li>You give it a pause goal; it tries to meet it</li>" +
+      "<li>Best default for services, Spring Boot, typical heaps</li>" +
+      "</ul></div>" +
+      "<div><h4>ZGC — low pause</h4><ul>" +
+      "<li>Pauses typically <b>&lt; 1 ms</b>, independent of heap size</li>" +
+      "<li>Heaps from hundreds of MB to terabytes</li>" +
+      "<li>Generational ZGC from Java 21 (<code>ZGenerational</code>; default with ZGC in 24+)</li>" +
+      "<li>APIs, trading, anything where a 50 ms pause is an incident</li>" +
+      "</ul></div>" +
+      "<div><h4>Shenandoah</h4><ul>" +
+      "<li>Same job as ZGC: concurrent compact, tiny pauses</li>" +
+      "<li>Red Hat / OpenJDK; not every vendor build ships it</li>" +
+      "<li>Reach for it when your distro has it and you already know it</li>" +
+      "</ul></div>" +
+      "<div><h4>Parallel / Serial</h4><ul>" +
+      "<li><b>Parallel</b> — throughput collector; STW, fine for batch/ETL</li>" +
+      "<li><b>Serial</b> — one thread; tiny heaps, single-CPU containers</li>" +
+      "<li><b>CMS</b> — gone (removed in 14). Do not mention it as current.</li>" +
+      "</ul></div></div>" +
+
+      "<p class=\"flow-label\">Interview cheat sheet</p>" +
+      "<table>" +
+      "<tr><th>Workload</th><th>Collector</th><th>Flag</th></tr>" +
+      "<tr><td>General service, unsure</td><td><b>G1</b> (default)</td><td><code>-XX:+UseG1GC</code></td></tr>" +
+      "<tr><td>Latency SLA, large heap</td><td><b>ZGC</b></td><td><code>-XX:+UseZGC</code></td></tr>" +
+      "<tr><td>Latency, distro has it</td><td>Shenandoah</td><td><code>-XX:+UseShenandoahGC</code></td></tr>" +
+      "<tr><td>Nightly batch, pause OK</td><td>Parallel</td><td><code>-XX:+UseParallelGC</code></td></tr>" +
+      "<tr><td>&lt; ~200 MB, 1 CPU</td><td>Serial</td><td><code>-XX:+UseSerialGC</code></td></tr>" +
+      "</table>" +
+
+      "<div class=\"callout\">The collector is a <b>JVM flag</b>, not a Java API. You do not pick it in code. " +
+      "You pass it wherever that process is started — CLI, <code>JAVA_TOOL_OPTIONS</code>, Docker, k8s, systemd, IDE VM options.</div>" +
+
+      "<p class=\"flow-label\">Where it is set — same flags, different wrappers</p>" +
+      "<pre><code>" +
+      "# 1) Command line — the source of truth\n" +
+      "java -XX:+UseZGC -Xms4g -Xmx4g -jar app.jar\n" +
+      "\n" +
+      "# G1 with an explicit pause goal (default is already G1 on 9+)\n" +
+      "java -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -Xmx4g -jar app.jar\n" +
+      "\n" +
+      "# Generational ZGC (Java 21–23; on 24+ ZGC is generational by default)\n" +
+      "java -XX:+UseZGC -XX:+ZGenerational -Xmx8g -jar app.jar\n" +
+      "\n" +
+      "# 2) Environment — picked up by every JVM in this shell/container\n" +
+      "export JAVA_TOOL_OPTIONS=\"-XX:+UseZGC -Xmx4g\"\n" +
+      "# JDK_JAVA_OPTIONS is the newer, cleaner twin (Java 9+)\n" +
+      "export JDK_JAVA_OPTIONS=\"-XX:+UseG1GC -XX:MaxGCPauseMillis=200\"\n" +
+      "\n" +
+      "# 3) Docker\n" +
+      "ENV JAVA_TOOL_OPTIONS=\"-XX:+UseG1GC -Xms512m -Xmx512m\"\n" +
+      "# or in the entrypoint:\n" +
+      "CMD [\"java\",\"-XX:+UseZGC\",\"-Xmx1g\",\"-jar\",\"/app.jar\"]\n" +
+      "\n" +
+      "# 4) Kubernetes — do not hide it in a random script\n" +
+      "# spec.containers[].env:\n" +
+      "# - name: JAVA_TOOL_OPTIONS\n" +
+      "#   value: \"-XX:+UseZGC -XX:+AlwaysPreTouch -Xms1g -Xmx1g\"\n" +
+      "\n" +
+      "# 5) systemd / Spring Boot service\n" +
+      "# Environment=\"JAVA_OPTS=-XX:+UseG1GC -Xms2g -Xmx2g\"\n" +
+      "# ExecStart=/usr/bin/java $JAVA_OPTS -jar /opt/app/app.jar\n" +
+      "\n" +
+      "# 6) Prove what is actually running\n" +
+      "jcmd &lt;pid&gt; VM.flags | grep -E 'Use(G1|Z|Shenandoah|Parallel|Serial)GC'\n" +
+      "java -Xlog:gc* -version          # see which collector started\n" +
+      "</code></pre>" +
+
+      "<p class=\"flow-label\">Flags that travel with the collector</p>" +
+      "<table>" +
+      "<tr><th>Flag</th><th>What it does</th></tr>" +
+      "<tr><td><code>-Xms</code> / <code>-Xmx</code></td><td>Initial / max heap. Set them <b>equal</b> in production so the heap does not resize under load.</td></tr>" +
+      "<tr><td><code>-XX:MaxGCPauseMillis=200</code></td><td>G1 pause <i>goal</i> — a hint, not a guarantee.</td></tr>" +
+      "<tr><td><code>-XX:InitiatingHeapOccupancyPercent</code></td><td>G1: when to start concurrent marking (default 45).</td></tr>" +
+      "<tr><td><code>-XX:+AlwaysPreTouch</code></td><td>Commit heap pages at startup — stable latency, slower boot.</td></tr>" +
+      "<tr><td><code>-Xlog:gc*:file=gc.log:time,uptime,level,tags</code></td><td>Unified logging (Java 9+). Read this before changing collectors.</td></tr>" +
+      "</table>" +
+
+      "<div class=\"callout warn\"><b>Do not change the collector because of a high GC CPU %.</b> " +
+      "That is usually allocation rate or a leak. Heap dump first " +
+      "(<code>jcmd &lt;pid&gt; GC.heap_dump /tmp/heap.hprof</code>), then flags. " +
+      "<code>System.gc()</code> is not a configuration.</div>" +
+
+      "<div class=\"callout danger\">In containers, size the heap to the <b>cgroup</b>, not the node. " +
+      "Java 10+ is container-aware: <code>-XX:MaxRAMPercentage=75</code> is often safer than a hardcoded " +
+      "<code>-Xmx</code> copied from a laptop. Serial GC on a 64-core node with a 256&nbsp;MB limit is a common k8s footgun — " +
+      "the JVM may still pick Serial for a tiny heap, which is correct.</div>"
+  }
+];
+
+/* built-in Topics — seeded into topics.json / localStorage the same way QA is */
+const BUILTIN_TOPICS = [
+  {
+    id: "gc-memory-leaks",
+    group: "GC",
+    title: "GC — Memory Leaks",
+    summary: "GC only frees unreachable objects. A Java leak is a forgotten reference from a GC root — unbounded caches, static collections, listeners, ThreadLocals in pools, unclosed resources.",
+    content:
+      "<div class=\"callout\"><b>There is no leak in the collector.</b> " +
+      "If the heap grows until <code>OutOfMemoryError</code>, something still reachable from a GC root is holding the graph. " +
+      "Dump the heap (<code>jcmd &lt;pid&gt; GC.heap_dump /tmp/heap.hprof</code>) and look for <i>who points at this</i> — not which GC flag to flip.</div>" +
+
+      "<p class=\"flow-label\">A leak is a path that never breaks</p>" +
+      "<div class=\"flow\">" +
+      "<div class=\"node accent\">GC root<small>static · stack · thread · JNI</small></div>" +
+      "<div class=\"arrow\">→</div>" +
+      "<div class=\"node\">forgotten reference<small>map, listener, ThreadLocal, …</small></div>" +
+      "<div class=\"arrow\">→</div>" +
+      "<div class=\"node bad\">live graph<small>never collected</small></div>" +
+      "</div>" +
+
+      "<p class=\"flow-label\">Usual suspects</p>" +
+      "<table>" +
+      "<tr><th>Suspect</th><th>GC root / holder</th><th>Fix in one line</th></tr>" +
+      "<tr><td>Unbounded cache / map</td><td>the map lives on a long-lived bean</td><td>bound it, expire it, or don’t cache</td></tr>" +
+      "<tr><td>Static collection</td><td>the <code>Class</code> object (app lifetime)</td><td>don’t accumulate on <code>static</code></td></tr>" +
+      "<tr><td>Listener never removed</td><td>the publisher (often a singleton)</td><td><code>removeListener</code> / <code>close()</code></td></tr>" +
+      "<tr><td><code>ThreadLocal</code> in a pool</td><td>the <b>reused worker thread</b></td><td><code>remove()</code> in <code>finally</code></td></tr>" +
+      "<tr><td>Unclosed resource</td><td>the wrapper + native/FD</td><td>try-with-resources</td></tr>" +
+      "</table>" +
+
+      "<h3>1. Unbounded caches / maps</h3>" +
+      "<p>Every <code>put</code> keeps the value reachable for as long as the map is reachable. " +
+      "A singleton service with an unbounded <code>HashMap</code> is a heap that only grows.</p>" +
+      "<div class=\"cmp split\">" +
+      "<div><h4>Leak</h4>" +
+      "<pre><code>class ResponseCache {\n" +
+      "  private final Map&lt;String, byte[]&gt; cache = new HashMap&lt;&gt;();\n" +
+      "\n" +
+      "  byte[] get(String url) {\n" +
+      "    return cache.computeIfAbsent(url, this::fetch);\n" +
+      "    // no eviction — distinct URLs grow forever\n" +
+      "  }\n" +
+      "}\n</code></pre></div>" +
+      "<div><h4>Fix</h4>" +
+      "<pre><code>class ResponseCache {\n" +
+      "  private final LoadingCache&lt;String, byte[]&gt; cache =\n" +
+      "      Caffeine.newBuilder()\n" +
+      "          .maximumSize(10_000)\n" +
+      "          .expireAfterWrite(Duration.ofMinutes(10))\n" +
+      "          .build(this::fetch);\n" +
+      "\n" +
+      "  byte[] get(String url) { return cache.get(url); }\n" +
+      "}\n" +
+      "// WeakHashMap only if keys can die;\n" +
+      "// values must not strongly point back at keys.\n</code></pre></div></div>" +
+      "<div class=\"callout warn\">A cache without a <b>max size and a TTL</b> is a leak with extra steps. " +
+      "Guava/Caffeine, not a raw <code>HashMap</code>.</div>" +
+
+      "<h3>2. Static collections</h3>" +
+      "<p>A <code>static</code> field is reachable for the life of the classloader — in a normal app, that is the whole JVM. " +
+      "Appending to a static <code>List</code>/<code>Map</code> is the textbook leak.</p>" +
+      "<div class=\"cmp split\">" +
+      "<div><h4>Leak</h4>" +
+      "<pre><code>class Audit {\n" +
+      "  static final List&lt;Request&gt; ALL = new ArrayList&lt;&gt;();\n" +
+      "\n" +
+      "  static void log(Request r) {\n" +
+      "    ALL.add(r);     // Request (and everything it holds)\n" +
+      "  }                 // lives until process exit\n" +
+      "}\n</code></pre></div>" +
+      "<div><h4>Fix</h4>" +
+      "<pre><code>class Audit {\n" +
+      "  private static final Logger LOG = LoggerFactory.getLogger(Audit.class);\n" +
+      "\n" +
+      "  static void log(Request r) {\n" +
+      "    LOG.info(\"id={}\", r.id());   // write and drop\n" +
+      "  }\n" +
+      "}\n" +
+      "// If you must retain: a bounded ring buffer,\n" +
+      "// not an ever-growing static List.\n</code></pre></div></div>" +
+      "<div class=\"callout\">Statics that hold <i>config</i> are fine. Statics that <b>accumulate per request</b> are not. " +
+      "In a heap dump they show up as a huge <code>java.lang.Class</code> retaining a collection.</div>" +
+
+      "<h3>3. Listeners never deregistered</h3>" +
+      "<p>The publisher holds the listener. The listener often holds a controller, a session, or a whole UI tree. " +
+      "If you <code>add</code> and never <code>remove</code>, the subscriber outlives its useful life.</p>" +
+      "<div class=\"cmp split\">" +
+      "<div><h4>Leak</h4>" +
+      "<pre><code>class Screen implements TickListener {\n" +
+      "  Screen(Clock clock) {\n" +
+      "    clock.addListener(this);  // clock is a singleton\n" +
+      "  }                           // Screen never removed\n" +
+      "  public void onTick() { /* paints */ }\n" +
+      "}\n</code></pre></div>" +
+      "<div><h4>Fix</h4>" +
+      "<pre><code>class Screen implements TickListener, AutoCloseable {\n" +
+      "  private final Clock clock;\n" +
+      "  Screen(Clock clock) {\n" +
+      "    this.clock = clock;\n" +
+      "    clock.addListener(this);\n" +
+      "  }\n" +
+      "  public void close() {\n" +
+      "    clock.removeListener(this);  // drop the edge\n" +
+      "  }\n" +
+      "}\n" +
+      "try (Screen s = new Screen(clock)) { s.show(); }\n</code></pre></div></div>" +
+      "<div class=\"callout warn\">Inner classes are implicit <code>this</code> holders: " +
+      "<code>clock.addListener(e -&gt; this.repaint())</code> pins the outer <code>Screen</code> too. " +
+      "Deregister the same instance you registered.</div>" +
+
+      "<h3>4. <code>ThreadLocal</code> in a thread pool</h3>" +
+      "<p>A <code>ThreadLocal</code> value is stored on the <b>Thread</b>. Pool workers are long-lived. " +
+      "<code>set</code> without <code>remove</code> leaves the previous request’s objects on that worker forever — " +
+      "and the next task can also <i>see</i> them (a correctness bug on top of the leak).</p>" +
+      "<div class=\"cmp split\">" +
+      "<div><h4>Leak</h4>" +
+      "<pre><code>class Auth {\n" +
+      "  static final ThreadLocal&lt;User&gt; CTX = new ThreadLocal&lt;&gt;();\n" +
+      "\n" +
+      "  static void handle(User u, Runnable work) {\n" +
+      "    CTX.set(u);     // pooled thread keeps User\n" +
+      "    work.run();     // never remove()\n" +
+      "  }\n" +
+      "}\n</code></pre></div>" +
+      "<div><h4>Fix</h4>" +
+      "<pre><code>class Auth {\n" +
+      "  static final ThreadLocal&lt;User&gt; CTX = new ThreadLocal&lt;&gt;();\n" +
+      "\n" +
+      "  static void handle(User u, Runnable work) {\n" +
+      "    CTX.set(u);\n" +
+      "    try {\n" +
+      "      work.run();\n" +
+      "    } finally {\n" +
+      "      CTX.remove();  // drop the entry on this worker\n" +
+      "    }\n" +
+      "  }\n" +
+      "}\n" +
+      "// Java 21+: ScopedValue — cannot leak across tasks.\n</code></pre></div></div>" +
+      "<div class=\"callout danger\"><code>ThreadLocal.remove()</code> is mandatory on pooled threads. " +
+      "A custom <code>ThreadPoolExecutor.afterExecute</code> that calls <code>remove()</code> is a good safety net. " +
+      "Virtual threads die with the task, so they do not have this pool-retention problem — platform pools do.</div>" +
+
+      "<h3>5. Unclosed resources</h3>" +
+      "<p>Streams, JDBC, HTTP bodies, and <code>DirectByteBuffer</code> pin native memory or file descriptors. " +
+      "The Java wrapper may be small; the off-heap / FD table is what actually runs out. " +
+      "GC will close some of these via <code>Cleaner</code>, but that is late and unreliable under load.</p>" +
+      "<div class=\"cmp split\">" +
+      "<div><h4>Leak</h4>" +
+      "<pre><code>byte[] load(Path p) throws IOException {\n" +
+      "  InputStream in = Files.newInputStream(p);\n" +
+      "  return in.readAllBytes();  // never close\n" +
+      "}\n" +
+      "\n" +
+      "ResultSet rs = stmt.executeQuery(sql);\n" +
+      "while (rs.next()) { ... }    // Connection stays open\n" +
+      "\n" +
+      "ByteBuffer buf = ByteBuffer.allocateDirect(1 &lt;&lt; 20);\n" +
+      "// native memory; Cleaner may not run in time\n</code></pre></div>" +
+      "<div><h4>Fix</h4>" +
+      "<pre><code>byte[] load(Path p) throws IOException {\n" +
+      "  try (InputStream in = Files.newInputStream(p)) {\n" +
+      "    return in.readAllBytes();\n" +
+      "  }   // close even on exception\n" +
+      "}\n" +
+      "\n" +
+      "try (Connection c = ds.getConnection();\n" +
+      "     PreparedStatement s = c.prepareStatement(sql);\n" +
+      "     ResultSet rs = s.executeQuery()) {\n" +
+      "  while (rs.next()) { ... }\n" +
+      "}\n" +
+      "\n" +
+      "// Direct buffers: reuse a pool, or allocate on-heap\n" +
+      "// unless you have a measured reason not to.\n</code></pre></div></div>" +
+
+      "<p class=\"flow-label\">How you confirm it is a leak</p>" +
+      "<div class=\"flow\">" +
+      "<div class=\"node\">GC log<small>Full GC, heap does not drop</small></div>" +
+      "<div class=\"arrow\">→</div>" +
+      "<div class=\"node accent\">heap dump</div>" +
+      "<div class=\"arrow\">→</div>" +
+      "<div class=\"node\">Histogram<small>which class is huge?</small></div>" +
+      "<div class=\"arrow\">→</div>" +
+      "<div class=\"node good\">Shortest path to GC root<small>the forgotten field</small></div>" +
+      "</div>" +
+      "<pre><code>jcmd &lt;pid&gt; GC.heap_dump /tmp/heap.hprof\n" +
+      "jcmd &lt;pid&gt; GC.class_histogram | head\n" +
+      "# then MAT / VisualVM: Dominator tree → path to GC root\n</code></pre>" +
+      "<div class=\"callout good\">If a Full GC <b>does</b> reclaim the heap, you do not have a leak — you have a high allocation rate. " +
+      "Tune the allocator / object churn, not the collector. " +
+      "<code>System.gc()</code> is not a fix for any of the five above.</div>"
+  }
+];
+
 /* ---- Index (built-in + custom terms, rebuildable) ---- */
 let GROUPS = [];
 let TERMS = {};
@@ -1699,6 +2163,67 @@ function builtinSeed() {
     };
   }));
   return out;
+}
+function builtinQASeed() {
+  const out = {};
+  BUILTIN_QA.forEach(q => {
+    out[q.id] = { id: q.id, group: q.group, question: q.question, answer: q.answer, qa: true, builtin: true };
+  });
+  return out;
+}
+function builtinTopicSeed() {
+  const out = {};
+  BUILTIN_TOPICS.forEach(t => {
+    out[t.id] = {
+      id: t.id, group: t.group, title: t.title, summary: t.summary,
+      content: t.content, topic: true, builtin: true
+    };
+  });
+  return out;
+}
+function overlayBuiltins(local, seed) {
+  const missing = [];
+  Object.keys(seed).forEach(id => {
+    if (!local[id]) missing.push(id);
+    local[id] = seed[id];            // HTML is canonical for builtins — Drive copies can be stale
+  });
+  return missing;
+}
+function ensureMap(x) {
+  if (!x || typeof x !== "object") return {};
+  if (Array.isArray(x)) {
+    const m = {};
+    x.forEach(it => { if (it && it.id) m[it.id] = it; });
+    return m;
+  }
+  return x;
+}
+async function persistSeed(path, storageKey, local, seed) {
+  const ids = Object.keys(seed);
+  if (!ids.length) return;
+  if (SERVER) {
+    for (const id of ids) {
+      try {
+        await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(stripRuntime(seed[id])) });
+      } catch (e) {}
+    }
+  } else {
+    try { localStorage.setItem(storageKey, JSON.stringify(serializeMap(local))); } catch (e) {}
+  }
+}
+async function persistIds(path, storageKey, local, seed, ids) {
+  if (!ids.length) return;
+  if (SERVER) {
+    for (const id of ids) {
+      try {
+        await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(stripRuntime(seed[id])) });
+      } catch (e) {}
+    }
+  } else {
+    try { localStorage.setItem(storageKey, JSON.stringify(serializeMap(local))); } catch (e) {}
+  }
 }
 
 const escapeHtml = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
@@ -1951,6 +2476,7 @@ function selectTopic(id) {
   showTab("glossary");
   markActive(id);
   detail.innerHTML = topicDetailHTML(t);
+  highlightBlocks(detail);
   mountTopicActions(detail, id);
   mountNotes(detail, topicNoteId(id), "topics");
   history.replaceState(null, "", "#topic/" + id);
@@ -2038,9 +2564,9 @@ function showTab(tab) {
   searchView.classList.toggle("show", isSearch);
   main.style.display = (isOverview || isSearch) ? "none" : "block";
   if (!isOverview && typeof stopGlobe === "function") stopGlobe();
-  if (tab === "terms") setOvDataset(termsCtx);
-  else if (tab === "qa") setOvDataset(qaCtx);
-  else if (tab === "topics") setOvDataset(topicsCtx);
+  if (tab === "terms") { setNavSection("terms"); setOvDataset(termsCtx); }
+  else if (tab === "qa") { setNavSection("qa"); setOvDataset(qaCtx); }
+  else if (tab === "topics") { setNavSection("topics"); setOvDataset(topicsCtx); }
   else if (isSearch) openSearch();
   else if (tab === "docs") enterDocs();
 }
@@ -2899,7 +3425,7 @@ function qaDetailHTML(q) {
     <h2 class="term-title">${q.title}</h2>
     <div class="term-actions">
       <button class="note-action" data-act="edit-qa">&#9998; Edit</button>
-      <button class="note-action danger" data-act="delete-qa">&#128465; Delete</button>
+      ${!q.builtin ? `<button class="note-action danger" data-act="delete-qa">&#128465; Delete</button>` : ""}
     </div>
     <div class="section"><h3>Question</h3><div class="rich">${q.question || ""}</div></div>
     <div class="section"><h3>Answer</h3><div class="rich">${q.answer || ""}</div></div>
@@ -2959,7 +3485,9 @@ function createQA() {
   if (!stripHtml(question)) { qaQ.focus(); return; }   // question is required
   const group = qaGroup.value.trim() || "My Q&A";
   const id = editingQAId || uniqueQAId(slugify(stripHtml(question).slice(0, 40)) || "qa");
+  const prev = editingQAId ? qaItems[editingQAId] : null;
   const item = { id, group, question, answer: qaA.innerHTML, qa: true };
+  if (prev && prev.builtin) item.builtin = true;
   persistQA(item);
   rebuildQAData();
   refreshQAViews();
@@ -2969,6 +3497,7 @@ function createQA() {
 function deleteQA(id) {
   const q = qaItems[id];
   if (!q) return;
+  if (q.builtin) return;
   if (!confirm(`Delete this Q&A? This cannot be undone.`)) return;
   delete qaItems[id];
   if (SERVER) {
@@ -3007,6 +3536,7 @@ function rebuildTopicData() {
   TOPIC_GROUPS = []; TOPIC_INDEX = {};
   const byName = {};
   Object.values(topicItems).forEach(t => {
+    if (!t || typeof t !== "object" || Array.isArray(t) || !t.id) return;
     t.title = t.title || "Untitled topic";
     t.lede = t.summary || stripHtml(t.content).slice(0, 160);   // tooltip / overview card
     let g = byName[t.group];
@@ -3042,7 +3572,7 @@ function topicDetailHTML(t) {
     ${t.summary ? `<p class="lede">${t.summary}</p>` : ""}
     <div class="term-actions">
       <button class="note-action" data-act="edit-topic">&#9998; Edit</button>
-      <button class="note-action danger" data-act="delete-topic">&#128465; Delete</button>
+      ${!t.builtin ? `<button class="note-action danger" data-act="delete-topic">&#128465; Delete</button>` : ""}
     </div>
     ${t.content ? `<div class="section"><h3>Content</h3><div class="rich">${t.content}</div></div>` : ""}
     ${notesSectionHTML()}
@@ -3060,6 +3590,7 @@ function openTopicDrawer(id) {
   if (!t) return;
   drawerTag.textContent = t._group ? t._group.tag : t.group;
   drawerBody.innerHTML = topicDetailHTML(t);
+  highlightBlocks(drawerBody);
   mountTopicActions(drawerBody, id);
   mountNotes(drawerBody, topicNoteId(id), "topics");
   drawerBody.scrollTop = 0;
@@ -3107,8 +3638,10 @@ function createTopic() {
   if (!title) { topicTitle.focus(); return; }             // title is required
   const group = topicGroup.value.trim() || "My Topics";
   const id = editingTopicId || uniqueTopicId(slugify(title.slice(0, 40)) || "topic");
+  const prev = editingTopicId ? topicItems[editingTopicId] : null;
   const item = { id, group, title, summary: topicSummary.value.trim(),
                  content: topicContent.innerHTML, topic: true };
+  if (prev && prev.builtin) item.builtin = true;
   persistTopic(item);
   rebuildTopicData();
   refreshTopicViews();
@@ -3118,6 +3651,7 @@ function createTopic() {
 function deleteTopic(id) {
   const t = topicItems[id];
   if (!t) return;
+  if (t.builtin) return;
   if (!confirm(`Delete this topic? This cannot be undone.`)) return;
   delete topicItems[id];
   if (SERVER) {
@@ -3501,19 +4035,19 @@ function highlightMatch(el, query) {
 /* ---- Init ---- */
 async function boot() {
   [customTerms, qaItems, topicItems] = await Promise.all([loadCustomTerms(), loadQA(), loadTopics()]);
-  // ensure built-in terms live in the store; seed any that are missing
+  customTerms = ensureMap(customTerms);
+  qaItems = ensureMap(qaItems);
+  topicItems = ensureMap(topicItems);
+  // HTML builtins always win in this session, then we write them to Drive so
+  // the Topic/QA sidebars are not stuck on a stale topics.json / qa.json.
   const seed = builtinSeed();
-  const missing = Object.keys(seed).filter(id => !customTerms[id]);
-  if (missing.length) {
-    missing.forEach(id => { customTerms[id] = seed[id]; });
-    if (SERVER) {
-      for (const id of missing) {
-        try { await fetch("/terms", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(seed[id]) }); } catch (e) {}
-      }
-    } else {
-      try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(serializeMap(customTerms))); } catch (e) {}
-    }
-  }
+  const missingTerms = overlayBuiltins(customTerms, seed);
+  await persistIds("/terms", CUSTOM_KEY, customTerms, seed, missingTerms);
+  const qaSeed = builtinQASeed();
+  overlayBuiltins(qaItems, qaSeed);
+  await persistSeed("/qa", QA_KEY, qaItems, qaSeed);
+  const topicSeed = builtinTopicSeed();
+  overlayBuiltins(topicItems, topicSeed);
   rebuildData();
   rebuildQAData();
   rebuildTopicData();
@@ -3529,6 +4063,7 @@ async function boot() {
   btnTree.classList.toggle("active", savedView === "tree");
   btnFlat.classList.toggle("active", savedView !== "tree");
   renderSidebar(savedView);
+  void persistSeed("/topics", TOPIC_KEY, topicItems, topicSeed);
   const initial = location.hash.slice(1);
   if (initial === "docs") {                       // the Docs landing list
     await loadDocs();
