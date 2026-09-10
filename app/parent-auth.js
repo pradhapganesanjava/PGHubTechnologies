@@ -24,7 +24,10 @@ import { store }  from './gauth.js'
 // target or a missing origin check here would hand a Drive token to whatever
 // page happened to frame this one.
 const HOST_ORIGIN = 'https://pradhapganesanjava.github.io'
-const DEV_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
+const DEV_ORIGINS = [
+  'http://localhost:5173', 'http://127.0.0.1:5173',
+  'http://localhost:5174', 'http://127.0.0.1:5174',
+]
 const TRUSTED = [HOST_ORIGIN, ...DEV_ORIGINS]
 
 export const framed = () => window.parent !== window
