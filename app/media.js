@@ -91,10 +91,56 @@ async function buildHtmlDoc(id, blob, key) {
   const html = raw.replace(ASSET_REF, (whole, open, rel, close) =>
     resolved.has(rel) ? `${open}${resolved.get(rel)}${close}` : whole)
 
-  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
+  const url = URL.createObjectURL(new Blob([withBackBar(html)], { type: 'text/html' }))
   blobs.set(key, url)
   blobToDrive.set(url, `drive:${id}`)
   return url
+}
+
+/* A document opened full page is a blob: URL. There is no site chrome around
+ * it, no address a reader would recognise, and nothing saying where they came
+ * from — a page that fills the window with no visible way out does not look
+ * like one the browser's Back button can undo, even though it can. So the copy
+ * we build carries its own way back.
+ *
+ * Only ever shown as the top document. Inside the app's frame the page already
+ * has "All documents" above it, and two back buttons is worse than one — hence
+ * the check at runtime rather than two different builds.
+ */
+const BACK_BAR = `
+<style>
+  #pghub-back{
+    position:fixed;left:14px;bottom:14px;z-index:2147483647;display:none;
+    font:600 13px/1 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:10px 15px;border-radius:999px;border:1px solid rgba(255,255,255,.16);
+    background:#14181f;color:#fff;cursor:pointer;box-shadow:0 3px 14px rgba(0,0,0,.3);
+  }
+  #pghub-back:hover{background:#2b333f}
+  #pghub-back:focus-visible{outline:2px solid #6ea8fe;outline-offset:2px}
+  @media print{#pghub-back{display:none!important}}
+</style>
+<button id="pghub-back" type="button" title="Back to the module (Esc)">&#8592; Back</button>
+<script>
+(function () {
+  if (window.self !== window.top) return;      // framed: the app has its own
+  var b = document.getElementById('pghub-back');
+  if (!b) return;
+  b.style.display = 'block';
+  var back = function () { history.back(); };
+  b.addEventListener('click', back);
+  document.addEventListener('keydown', function (e) {
+    // Not while the reader is typing into the document's own filter box.
+    var t = e.target || {};
+    if (e.key === 'Escape' && !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || '')) back();
+  });
+})();
+<\/script>`
+
+/** Put the way back into a document without disturbing what is already there. */
+function withBackBar(html) {
+  return /<\/body\s*>/i.test(html)
+    ? html.replace(/<\/body\s*>/i, BACK_BAR + '</body>')
+    : html + BACK_BAR
 }
 
 // Deliberately plain and theme-neutral: it flashes briefly inside a frame
