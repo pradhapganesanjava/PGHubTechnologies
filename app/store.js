@@ -90,15 +90,21 @@ async function loadFresh(kind) {
     void revalidate(kind, hit.version)
     return hit.data
   }
-  // Cold: metadata and body side by side, so the version to cache under costs
-  // no extra wait. Metadata failing only means this copy is not cached.
-  const [data, meta] = await Promise.all([
-    readModuleJson(Store.mod, name, {}),
-    moduleFileMeta(Store.mod, name).catch(() => null),
-  ])
-  const map = asMap(data)
+  // Cold. Only a read that actually succeeded is cached: readModuleJson turns
+  // any failure — an expiring token, a network blip — into an empty {}, and
+  // caching that under the file's current version would pin an empty module
+  // until the file next changed, since the version check keeps saying "same".
+  // So the body is read by id, which throws, and the fallback path below is
+  // served for this session but never stored.
+  let map
+  try {
+    const meta = await moduleFileMeta(Store.mod, name)
+    map = meta ? asMap(await readJsonById(meta.id)) : {}
+    if (meta) void cachePut(who(), Store.mod, name, { data: map, version: meta.version, fileId: meta.id })
+  } catch {
+    map = asMap(await readModuleJson(Store.mod, name, {}))   // stale-id self-heal, uncached
+  }
   if (!Store._cache.has(kind)) Store._cache.set(kind, map)
-  if (meta) void cachePut(who(), Store.mod, name, { data: map, version: meta.version, fileId: meta.id })
   return Store._cache.get(kind)
 }
 

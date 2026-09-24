@@ -23,12 +23,26 @@ const DB_NAME = 'pghubtechs-cache'
 const STORE   = 'files'
 
 let _db = null
-function db() {
-  return _db ??= new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1)
-    req.onupgradeneeded = () => req.result.createObjectStore(STORE)
+function open(version) {
+  return new Promise((resolve, reject) => {
+    const req = version ? indexedDB.open(DB_NAME, version) : indexedDB.open(DB_NAME)
+    req.onupgradeneeded = () => {
+      if (!req.result.objectStoreNames.contains(STORE)) req.result.createObjectStore(STORE)
+    }
     req.onsuccess = () => resolve(req.result)
     req.onerror   = () => reject(req.error)
+  })
+}
+/* Opened at whatever version exists. A database without the store — left by
+ * an interrupted first open, or by anything that opened the name without an
+ * upgrade handler — is reopened one version up so the store gets created;
+ * otherwise every call would fail and the cache would be off for good. */
+function db() {
+  return _db ??= open().then(d => {
+    if (d.objectStoreNames.contains(STORE)) return d
+    const next = d.version + 1
+    d.close()
+    return open(next)
   }).catch(e => { _db = null; throw e })
 }
 
@@ -41,7 +55,9 @@ function tx(mode, fn) {
   }))
 }
 
-const keyOf = (who, mod, name) => `${who}|${mod}/${name}`
+// v2: entries written before only successful reads were cached may hold an
+// empty module under a current version, so they are left behind unread.
+const keyOf = (who, mod, name) => `v2|${who}|${mod}/${name}`
 
 /** {data, version, fileId, savedAt} or null. */
 export async function cacheGet(who, mod, name) {
