@@ -43,8 +43,13 @@ difference.
 
 Two consequences worth knowing:
 
-- **Reads are cached** for the session. A Drive round trip is ~200 ms where
-  localhost was ~1 ms.
+- **Reads are cached** for the session, and across sessions in IndexedDB
+  (`app/cache.js`). A Drive round trip is ~200 ms where localhost was ~1 ms,
+  and a module's `qa.json` can be a megabyte, so a later visit renders from
+  the stored copy at once and then asks Drive only for the file's `version`.
+  The file is downloaded again only when that number has moved; the status
+  chip then offers a reload. The copy is keyed by the signed-in account and
+  wiped when an account is turned away, since it sits outside Drive's ACL.
 - **Writes are debounced** (~1 s) and flushed on page hide. The app saves a whole
   file per edited item, so saving on every keystroke would re-upload the same
   100 KB repeatedly. A chip in the corner shows when a save is pending, and
@@ -194,6 +199,28 @@ harness still builds; the other tools need their content restored from Drive
 before they will run again.
 
 ---
+
+## Adding a module
+
+A module page is only a renderer; its content lives in Drive. To add one:
+
+```bash
+# 1. the page — clone the newest shell and empty its BUILTIN_* arrays
+# 2. the Drive side: folder, empty data files, hub.json entry, search-index state
+node tools/add-module.mjs JavaScript --page JavaScript/JavaScriptNotes.html \
+     --title JavaScript --emoji 🟨 --category Languages --sub "…"
+# 3. content, many items per upload (arrays of the app's own item shapes)
+node tools/put-items.mjs JavaScript qa     qa.json      # or terms / topics
+node tools/put-items.mjs JavaScript qa     qa.json --fresh   # rewrite in this order
+# 4. make the hub see it
+node tools/build-hub-index.mjs && node tools/build-search-index.mjs
+```
+
+`JavaScript/` is built this way: no built-in content at all, and its terms,
+Q&A and topics are rich HTML authored against the page's reading components —
+`.tldr`, `.recall`, `.steps`, `.badge`, `.xrefs` and theme-aware inline SVG
+(`figure.diagram` with `bx`/`ln`/`tx` classes). A link written as
+`href="#qa/<id>"`, `"#topic/<id>"` or `"#<term-id>"` opens that item in place.
 
 ## Adding a document
 
