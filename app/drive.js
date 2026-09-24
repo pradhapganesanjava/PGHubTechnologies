@@ -17,6 +17,9 @@ const esc = s => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")
 
 // name -> id, within a session
 const memo = new Map()
+// file id -> the Drive version our own last write produced
+const lastVersion = new Map()
+export const versionWritten = id => lastVersion.get(id) ?? null
 
 function cacheKey(parentId, name) { return `id:${parentId}:${name}` }
 
@@ -116,6 +119,26 @@ export async function readRootJson(name, fallback = {}) {
   }
 }
 
+/**
+ * A module file's id and Drive `version` — the number Drive bumps on every
+ * change to the file, which is what the persistent cache compares against.
+ * One small metadata request; the file body is not downloaded. Returns null
+ * when the file does not exist. Throws {status} on a failed request.
+ */
+export async function moduleFileMeta(mod, name) {
+  const folder = await moduleFolderId(mod)
+  const id = await findChild(folder, name)
+  if (!id) return null
+  const r = await GAuth.fetch(`${FILES}/${id}?fields=id,version&supportsAllDrives=true`)
+  if (!r.ok) {
+    const err = new Error(`Drive metadata failed (${r.status})`)
+    err.status = r.status
+    throw err
+  }
+  const { version } = await r.json()
+  return { id, version: String(version) }
+}
+
 /** Throws {status} on failure so callers can distinguish 404 from anything else. */
 export async function readJsonById(fileId, fallback) {
   const r = await GAuth.fetch(`${FILES}/${fileId}?alt=media&supportsAllDrives=true`)
@@ -161,9 +184,12 @@ async function writeJsonInto(folder, name, data) {
 
   if (id) {
     const r = await GAuth.fetch(
-      `${UPLOAD}/${id}?uploadType=media&supportsAllDrives=true`,
+      `${UPLOAD}/${id}?uploadType=media&fields=id,version&supportsAllDrives=true`,
       { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body })
     if (!r.ok) throw new Error(`Saving ${name} failed (${r.status})`)
+    // Remembered so the persistent cache can be stamped with the version this
+    // write produced, rather than refetching the file it just uploaded.
+    try { const { version } = await r.json(); if (version) lastVersion.set(id, String(version)) } catch {}
     return id
   }
   return createFile(folder, name, new Blob([body], { type: 'application/json' }))

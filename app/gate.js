@@ -33,6 +33,7 @@ const CSS = `
 .pghub-chip[data-show="1"]{opacity:1}
 .pghub-chip[data-state="saving"]{color:#e8c37a}
 .pghub-chip[data-state="error"]{color:#f2a0a0;border-color:#5a2b2b}
+.pghub-chip[data-state="updated"]{color:#8ecbff;cursor:pointer;pointer-events:auto}
 @media(prefers-color-scheme:light){
   .pghub-gate{background:#f7f8fa;color:#15181e}
   .pghub-gate p{color:#5b6472}
@@ -84,7 +85,7 @@ export function installGate({ title = 'PG Hub Technologies', emoji = '🧰', onF
     // account chooser again; otherwise "Try again" just fails identically,
     // with no way to switch.
     if (e?.code === 'no-root' || e?.message?.includes("doesn't have access")) {
-      GAuth.signOut()
+      GAuth.signOut({ wipe: true })
       forceChooser = true
       btn.textContent = 'Sign in with a different account'
     } else {
@@ -152,6 +153,15 @@ export function installGate({ title = 'PG Hub Technologies', emoji = '🧰', onF
   })
   window.addEventListener('pghub:error', e =>
     show('error', `Save failed — ${e.detail.message}`, true))
+  // The page drew from the persistent cache and Drive has since changed. The
+  // store already holds the new copy; only a reload redraws it.
+  window.addEventListener('pghub:updated', () => {
+    if (chip.dataset.state === 'saving' || chip.dataset.state === 'error') return
+    show('updated', 'Newer content in Drive — click to reload', true)
+  })
+  chip.addEventListener('click', () => {
+    if (chip.dataset.state === 'updated') location.reload()
+  })
 
   // Manual save is worth exposing; the app has no other "save now".
   if (onFlush) {

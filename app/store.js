@@ -11,7 +11,10 @@
  *
  *   Reads are cached. A module's terms/qa/topics/notes JSON is fetched from
  *   Drive once per session and served from memory afterwards, because a Drive
- *   round trip is ~200ms where a localhost one was ~1ms.
+ *   round trip is ~200ms where a localhost one was ~1ms. It is also kept in
+ *   IndexedDB across sessions (app/cache.js): a later visit renders from that
+ *   copy at once, then checks the file's Drive version in the background and
+ *   downloads it again only if it has changed.
  *
  *   Writes are debounced. The app POSTs once per edited item and the whole
  *   file is rewritten each save, so saving on every keystroke would mean
@@ -21,7 +24,10 @@
  *   closed. Callers see the same {ok:true} they always did.
  */
 import { readModuleJson, writeModuleJson, moduleFolderId, ensureFolder, createFile,
-         updateFile, findChild, listFolder, readTextById } from './drive.js'
+         updateFile, findChild, listFolder, readTextById, readJsonById,
+         moduleFileMeta, versionWritten, clearIdCache } from './drive.js'
+import { GAuth } from './gauth.js'
+import { cacheGet, cachePut } from './cache.js'
 import { ready } from './ready.js'
 import { restoreDriveUrls } from './media.js'
 import { patchHubIndex } from './hub-index.js'
@@ -60,11 +66,70 @@ const emit = (name, detail) => window.dispatchEvent(new CustomEvent(name, { deta
 
 // ── cache ────────────────────────────────────────────────────────────────────
 
-async function load(kind) {
-  if (Store._cache.has(kind)) return Store._cache.get(kind)
-  const data = await readModuleJson(Store.mod, FILE_OF[kind], {})
-  Store._cache.set(kind, data && typeof data === 'object' ? data : {})
+// Whose cache this is. No known account (the profile lookup is best-effort)
+// means no persistent cache — never a shared one.
+const who = () => GAuth.getUser()?.email?.trim().toLowerCase() || null
+const asMap = d => (d && typeof d === 'object' ? d : {})
+
+// One load per kind, however many callers ask at once during boot.
+const _loading = new Map()
+
+function load(kind) {
+  if (Store._cache.has(kind)) return Promise.resolve(Store._cache.get(kind))
+  if (!_loading.has(kind)) {
+    _loading.set(kind, loadFresh(kind).finally(() => _loading.delete(kind)))
+  }
+  return _loading.get(kind)
+}
+
+async function loadFresh(kind) {
+  const name = FILE_OF[kind]
+  const hit  = await cacheGet(who(), Store.mod, name)
+  if (hit && hit.data && typeof hit.data === 'object') {
+    Store._cache.set(kind, hit.data)
+    void revalidate(kind, hit.version)
+    return hit.data
+  }
+  // Cold: metadata and body side by side, so the version to cache under costs
+  // no extra wait. Metadata failing only means this copy is not cached.
+  const [data, meta] = await Promise.all([
+    readModuleJson(Store.mod, name, {}),
+    moduleFileMeta(Store.mod, name).catch(() => null),
+  ])
+  const map = asMap(data)
+  if (!Store._cache.has(kind)) Store._cache.set(kind, map)
+  if (meta) void cachePut(who(), Store.mod, name, { data: map, version: meta.version, fileId: meta.id })
   return Store._cache.get(kind)
+}
+
+/**
+ * The page has already rendered from the cached copy; find out whether Drive
+ * has moved on since. One metadata request. When the version differs the file
+ * is fetched, the in-memory copy replaced — so the next save merges into the
+ * current file, not the stale one — and the page is told, since it has
+ * already drawn the old content and only a reload redraws it.
+ *
+ * An edit made in this tab before the check returns wins: the kind is dirty,
+ * the fresh copy is not applied over it, and the cached entry is left for the
+ * write's own version to replace.
+ */
+async function revalidate(kind, cachedVersion) {
+  const name = FILE_OF[kind]
+  try {
+    let meta
+    try { meta = await moduleFileMeta(Store.mod, name) }
+    catch (e) {
+      if (e?.status !== 404) return               // offline or transient — keep serving the cache
+      clearIdCache()                              // the cached id went stale
+      meta = await moduleFileMeta(Store.mod, name)
+    }
+    if (!meta || meta.version === cachedVersion) return
+    const fresh = asMap(await readJsonById(meta.id))
+    if (Store._dirty.has(kind) || Store._inFlight) return
+    Store._cache.set(kind, fresh)
+    await cachePut(who(), Store.mod, name, { data: fresh, version: meta.version, fileId: meta.id })
+    emit('pghub:updated', { kind })
+  } catch { /* the cached copy stands */ }
 }
 
 function markDirty(kind) {
@@ -89,8 +154,13 @@ export async function flush() {
       // cache, saved nowhere.
       Store._dirty.delete(kind)
       try {
-        await writeModuleJson(Store.mod, FILE_OF[kind] ?? `${kind}.json`,
-                              Store._cache.get(kind) ?? {})
+        const name = FILE_OF[kind] ?? `${kind}.json`
+        const data = Store._cache.get(kind) ?? {}
+        const id   = await writeModuleJson(Store.mod, name, data)
+        // The persistent copy follows the write. Without the version the write
+        // produced it is dropped to "unknown", which costs one refetch next
+        // visit rather than risking a stale copy being taken as current.
+        void cachePut(who(), Store.mod, name, { data, version: versionWritten(id), fileId: id })
         emit('pghub:saved', { kind, pending: Store._dirty.size })
       } catch (e) {
         // Put it back and stop; a later edit or the page-hide flush retries.

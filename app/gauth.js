@@ -7,6 +7,7 @@
  * GAuth.fetch, which re-authorizes silently and retries once on a 401.
  */
 import { Config, isEmailAllowed } from './config.js'
+import { cacheClear } from './cache.js'
 
 const TOK_KEY = 'tok'
 const USR_KEY = 'usr'
@@ -178,7 +179,7 @@ export const GAuth = {
           // what this branch does.
           if (this._user?.email && !(await isEmailAllowed(this._user.email))) {
             const who = this._user.email
-            this.signOut()
+            this.signOut({ wipe: true })
             reject(new Error(`${who} doesn't have access to this hub.`))
             return
           }
@@ -191,7 +192,7 @@ export const GAuth = {
     })
   },
 
-  signOut({ broadcast = true } = {}) {
+  signOut({ broadcast = true, wipe = false } = {}) {
     // Deliberately NOT google.accounts.oauth2.revoke(). Revoking withdraws the
     // user's grant to the whole Cloud project, not just this tab — which takes
     // the command-line tooling's refresh token down with it, since it lives
@@ -200,6 +201,10 @@ export const GAuth = {
     // the hour; to withdraw access properly, use the Google account page.
     this._token = null
     this._user  = null
+    // The persistent content cache (app/cache.js) sits outside Drive's ACL.
+    // It is keyed by account, so an expired token leaves it in place; turning
+    // an account away wipes it, since that is someone else at this browser.
+    if (wipe) void cacheClear()
     store.del(Config.ns + TOK_KEY)
     store.del(Config.ns + USR_KEY)
     // Signing out in one tab should not leave the others holding a token that
