@@ -185,11 +185,20 @@ const BACK_BAR = `
 })();
 <\/script>`
 
-/** Put the way back into a document without disturbing what is already there. */
+/** Put the way back into a document without disturbing what is already there.
+ *
+ * Match the last </body>, not the first. Interview notes and saved pages often
+ * include a literal </body> inside a <script> example. The first one is that
+ * example; injecting here splits the script, so the full-page copy never runs
+ * while the framed copy (which is left untouched) still renders.
+ */
 function withBackBar(html) {
-  return /<\/body\s*>/i.test(html)
-    ? html.replace(/<\/body\s*>/i, BACK_BAR + '</body>')
-    : html + BACK_BAR
+  const re = /<\/body\s*>/ig
+  let last = -1
+  let m
+  while ((m = re.exec(html))) last = m.index
+  if (last < 0) return html + BACK_BAR
+  return html.slice(0, last) + BACK_BAR + html.slice(last)
 }
 
 // Deliberately plain and theme-neutral: it flashes briefly inside a frame
