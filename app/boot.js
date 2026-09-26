@@ -12,6 +12,7 @@ import { installStore, flush } from './store.js'
 import { installMedia }        from './media.js'
 import { installGate }         from './gate.js'
 import { installDocsUpload }   from './docs-upload.js'
+import { installPager }        from './pager.js'
 
 // Stamped by tools/build-app.py. The ?m= fallback exists so a page can be
 // pointed at another module's folder by hand when debugging.
@@ -25,6 +26,10 @@ installGate({ title: document.title || 'PG Hub Technologies', emoji: '🧰', onF
 // Adding a document meant leaving the app for Drive. This puts it on the
 // Documents page, for every module at once — see the note in docs-upload.js.
 installDocsUpload({ onFlush: flush })
+
+// Previous / Next under every term, Q&A and topic, in the sidebar's own order —
+// see the note in pager.js.
+installPager()
 
 // ── shared preferences ──────────────────────────────────────────────────────
 // The page's own applyTheme is a plain function in its inline script, so it is
