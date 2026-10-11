@@ -856,142 +856,6 @@ const APP_ID = "interview-prep";   // must match the server's folder-derived id 
   };
 })();
 const BUILTIN_GROUPS = [
-  {
-    name: "Delivery Protocol",
-    tag: "Delivery",
-    terms: [
-      {
-        id: "headline-first",
-        title: "Headline First",
-        lede: "Open with the answer in one sentence, then justify it — never build up to the point.",
-        what: "<p>Lead with the conclusion (\"I'd use a queue here, because the write path can't block on the third-party call\"), then give the reasoning, then the caveats. Interviewers score what they hear in the first fifteen seconds of an answer.</p>",
-        why: "A correct answer buried under three minutes of build-up reads as uncertainty. The headline also gives the interviewer a hook to steer you, so you spend your time on what they actually want.",
-        apply: [
-          "One sentence, then \"because…\", then the trade-off.",
-          "If you need thinking time, say what you're about to do, don't go silent.",
-          "End the answer explicitly — \"that's my approach\" — instead of trailing off."
-        ],
-        related: ["narrate-while-building", "name-the-tradeoff"]
-      },
-      {
-        id: "narrate-while-building",
-        title: "Narrate While Building",
-        lede: "Communication is scored on its own axis — a working solution explained beats a perfect one in silence.",
-        what: "<p>Say what you're doing as you type: the approach, why this data structure, what you're about to test. In screens like Karat, correctness and communication are separate scores, so silent brilliance loses to narrated competence.</p>",
-        why: "The interviewer can only score what they observe. Narration also surfaces a wrong assumption early, while there's still time to correct it.",
-        apply: [
-          "State the approach before writing code, and ask if it sounds right.",
-          "Call out complexity as you commit to a structure, not at the end.",
-          "Say when you're stuck and what you'd try next — that is a scored signal too."
-        ],
-        related: ["headline-first", "self-mock"]
-      },
-      {
-        id: "name-the-tradeoff",
-        title: "Name the Trade-off",
-        lede: "Seniority shows up as \"it depends, and here's what it depends on\" — with the axis named.",
-        what: "<p>Every design answer has an axis: latency vs cost, consistency vs availability, build vs buy. Naming the axis and picking a side with a reason is the senior signal; listing options without choosing is the junior one.</p>",
-        why: "Interviewers probe for whether you understand consequences. A named trade-off proves you've operated the thing, not just read about it.",
-        apply: [
-          "Say the axis out loud, then commit: \"I'd take the write amplification to keep reads O(1).\"",
-          "Attach a number when you have one — p99, cost per million, rebuild time.",
-          "Say what would change your mind; that's the strongest form of the answer."
-        ],
-        related: ["headline-first", "story-bank"]
-      }
-    ]
-  },
-  {
-    name: "Formats",
-    tag: "Formats",
-    terms: [
-      {
-        id: "karat-round",
-        title: "Karat Round",
-        lede: "A one-hour outsourced screen: coding, domain-knowledge Q&A, and behavioral — scored on separate axes.",
-        what: "<p>The hour splits into a coding problem, rapid domain questions, and behavioral questions. The interviewer is often not from the hiring team and follows a rubric, so answers are scored against expected keywords and clarity rather than a debate.</p>",
-        why: "Knowing it's rubric-scored changes tactics: hit the expected points explicitly, keep answers structured and finite, and don't assume shared context.",
-        apply: [
-          "Answer domain questions headline-first, in 45–90 seconds, then stop.",
-          "Say the keyword the rubric wants — name the algorithm, the isolation level, the protocol.",
-          "Treat the recording as the audience: no shared whiteboard context to lean on."
-        ],
-        related: ["narrate-while-building", "self-mock"]
-      },
-      {
-        id: "take-home",
-        title: "Take-Home",
-        lede: "Judged on judgement, not volume — scope, tests and a README beat extra features.",
-        what: "<p>A take-home is assessed for how you scope an ambiguous ask, what you chose not to build, and whether the result is legible: setup that works first try, tests that state intent, and a README that names the assumptions and trade-offs.</p>",
-        why: "Reviewers spend minutes, not hours. The README is what converts your reasoning into a score; unexplained cleverness reads as accidental.",
-        apply: [
-          "Write the README first — assumptions, scope cut, how to run, what you'd do next.",
-          "Test the interesting path, not every getter.",
-          "Timebox and say what the box was; over-delivery signals poor prioritization."
-        ],
-        related: ["name-the-tradeoff", "story-bank"]
-      },
-      {
-        id: "live-design-round",
-        title: "Live Design Round",
-        lede: "Drive the structure yourself: requirements, estimates, high-level design, then one deep dive.",
-        what: "<p>Open by pinning functional and non-functional requirements and rough numbers, sketch the boxes, then go deep where the risk actually is. The interviewer steers; your job is to keep a visible structure and make the choices explicit.</p>",
-        why: "Most failures are structural, not technical — candidates dive into a component before scoping the problem, then run out of time before the interesting part.",
-        apply: [
-          "Get agreement on scope and scale before drawing anything.",
-          "Timebox the high level; leave half the round for the deep dive.",
-          "Say what you're deliberately not covering."
-        ],
-        related: ["name-the-tradeoff", "headline-first"]
-      }
-    ]
-  },
-  {
-    name: "Preparation",
-    tag: "Prep",
-    terms: [
-      {
-        id: "story-bank",
-        title: "Story Bank",
-        lede: "A small set of rehearsed, specific stories that can be re-aimed at most behavioral prompts.",
-        what: "<p>Six to eight stories — a hard debugging win, a disagreement, a failure you owned, a thing you shipped under pressure — each with situation, your action, the measurable result, and what you'd do differently.</p>",
-        why: "Behavioral answers invented live drift into generality. A rehearsed bank keeps the specifics — numbers, names of systems, the actual decision — which is what reads as true.",
-        apply: [
-          "Write each story once, out loud, in under two minutes.",
-          "Attach a metric to every result.",
-          "Map each story to the two or three prompts it can answer.",
-          "Include the gaps you know you have, with what you did about them."
-        ],
-        related: ["self-mock", "narrate-while-building"]
-      },
-      {
-        id: "self-mock",
-        title: "Self-Mock",
-        lede: "Record yourself answering under time — the gap between what you know and what you said is the whole problem.",
-        what: "<p>Run a timed round alone, recorded, then watch it. The failure modes are audible: long silences, no headline, trailing off, over-explaining the easy part.</p>",
-        why: "Reading answers builds recognition, not recall under pressure. Recording is the only cheap way to see what an interviewer actually experiences.",
-        apply: [
-          "60 minutes, no pausing, no looking things up.",
-          "Watch it back at 1.5× and note every silence over five seconds.",
-          "Re-run the same question until the headline comes out first, every time."
-        ],
-        related: ["story-bank", "karat-round"]
-      },
-      {
-        id: "jd-mapping",
-        title: "JD Mapping",
-        lede: "Map the job description's requirements onto your evidence — and find the honest gaps before they do.",
-        what: "<p>Split the posting into strong match, partial match and gap. For each strong match, name the system you built. For each gap, prepare the honest sentence: what you haven't done, the nearest thing you have done, and how you'd close it.</p>",
-        why: "Interview loops are drawn from the JD. Mapping tells you what to rehearse, and an owned gap costs far less than a bluffed one that unravels under a follow-up.",
-        apply: [
-          "Three columns: strong / partial / gap — with evidence in column one.",
-          "Rehearse the gap sentence; do not improvise it.",
-          "Re-map per company; the same résumé aims differently at different loops."
-        ],
-        related: ["story-bank", "name-the-tradeoff"]
-      }
-    ]
-  }
 ];
 
 /* ---- Index (built-in + custom terms, rebuildable) ---- */
@@ -2884,7 +2748,14 @@ async function boot() {
     selectQA(initial.slice(3));                   // #qa/<id>
     loadDocs();
   } else {
-    select(TERMS[initial] ? initial : GROUPS[0].terms[0].id);
+    // No BUILTIN_GROUPS here — every term lives in Drive — so an empty
+    // terms.json leaves nothing to land on; say so instead of throwing.
+    const first = GROUPS[0] && GROUPS[0].terms[0];
+    if (TERMS[initial]) select(initial);
+    else if (first) select(first.id);
+    else detail.innerHTML = '<h2 class="term-title">Nothing here yet</h2>'
+      + '<p style="color:var(--muted);line-height:1.65">This module\'s content lives in Google Drive.'
+      + ' Use <b>+ Add term</b>, <b>+ Add Q&amp;A</b> or <b>+ Add Topic</b> in the left panel to write the first one.</p>';
     loadDocs();                                   // warm the docs cache so Search covers them immediately
   }
 }

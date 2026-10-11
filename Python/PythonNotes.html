@@ -1018,109 +1018,6 @@ const APP_ID = "python";
   };
 })();
 const BUILTIN_GROUPS = [
-  {
-    name: "Language Fundamentals",
-    tag: "Core",
-    terms: [
-      {
-        id: "object-and-class",
-        title: "Object & Class",
-        lede: "A class is the blueprint; an object is a concrete instance of it. In Python everything — even a function or a class — is itself an object.",
-        what: "A <b>class</b> declares attributes (state) and methods (behavior) with <code>class</code>. An <b>object</b> is a runtime instance created by calling the class. Every object carries a reference to its type, and every class ultimately derives from <code>object</code>, inheriting <code>__eq__</code>, <code>__hash__</code>, and <code>__repr__</code>.",
-        why: "Classes give you encapsulation and a stable interface; objects give you identity and mutable state. Defining <code>__eq__</code> and <code>__hash__</code> correctly is what makes objects behave in sets and dict keys.",
-        apply: [
-          "Use a leading underscore (<code>_x</code>) to signal “internal” rather than truly private.",
-          "Define <code>__eq__</code> and <code>__hash__</code> together — never one without the other.",
-          "Reach for <code>@dataclass</code> or <code>NamedTuple</code> for plain data carriers to get these for free.",
-          "Prefer immutability with <code>@dataclass(frozen=True)</code> when the value never changes."
-        ],
-        code: `from dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass Point:\n    x: int\n    y: int\n\np = Point(1, 2)   # instance; __eq__/__hash__/__repr__ for free`,
-        related: ["duck-typing", "dunder-methods", "list-comprehension"]
-      },
-      {
-        id: "duck-typing",
-        title: "Duck Typing",
-        lede: "“If it walks like a duck and quacks like a duck, it's a duck.” Python cares about behavior (methods) rather than declared type.",
-        what: "Instead of checking a value's class, Python code simply uses the methods it needs and lets the object respond. Any object that implements the required protocol (e.g. <code>__iter__</code>, <code>__len__</code>) is acceptable, regardless of its inheritance.",
-        why: "Duck typing decouples callers from concrete classes, keeps functions generic, and makes testing with fakes trivial. It underlies iterables, context managers, and the whole “protocol” family of typing.",
-        apply: [
-          "Ask for the capability, not the type — accept any iterable, not just a <code>list</code>.",
-          "Prefer <code>try/except</code> (EAFP) over pre-checking types (LBYL).",
-          "Formalize expected behavior with <code>typing.Protocol</code> for static checks.",
-          "Avoid <code>isinstance</code> gatekeeping unless you truly need to branch on type."
-        ],
-        code: `def total(items):        # any iterable of numbers works\n    return sum(items)\n\ntotal([1, 2, 3])         # 6\ntotal((x for x in range(4)))  # 6 — a generator, also fine`,
-        related: ["object-and-class", "generators", "dunder-methods"]
-      },
-      {
-        id: "dunder-methods",
-        title: "Dunder (Magic) Methods",
-        lede: "Double-underscore methods like <code>__init__</code>, <code>__repr__</code>, and <code>__len__</code> let your objects plug into Python's built-in syntax.",
-        what: "Python maps operators and built-ins to special methods: <code>len(x)</code> calls <code>x.__len__()</code>, <code>a + b</code> calls <code>a.__add__(b)</code>, <code>for i in x</code> calls <code>x.__iter__()</code>. Implementing them makes your type feel native.",
-        why: "Dunder methods are how duck typing is realized — they define the protocols the interpreter and standard library expect, so your objects work in loops, formatting, comparisons, and collections.",
-        apply: [
-          "Always define <code>__repr__</code> for debuggable output.",
-          "Implement <code>__eq__</code> + <code>__hash__</code> to use objects as dict keys / set members.",
-          "Add <code>__enter__</code>/<code>__exit__</code> to make a context manager.",
-          "Use <code>functools.total_ordering</code> to derive the rest from <code>__eq__</code> and <code>__lt__</code>."
-        ],
-        code: `class Money:\n    def __init__(self, cents): self.cents = cents\n    def __repr__(self): return f"Money({self.cents})"\n    def __add__(self, o): return Money(self.cents + o.cents)\n\nMoney(150) + Money(50)   # Money(200)`,
-        related: ["object-and-class", "duck-typing"]
-      }
-    ]
-  },
-  {
-    name: "Idioms & Data",
-    tag: "Idioms",
-    terms: [
-      {
-        id: "list-comprehension",
-        title: "Comprehensions",
-        lede: "A compact, readable expression that builds a list, dict, or set in one line — Python's idiomatic replacement for many loops.",
-        what: "A comprehension pairs an output expression with one or more <code>for</code> clauses and optional <code>if</code> filters: <code>[f(x) for x in xs if cond]</code>. Swap the brackets for <code>{}</code> to build sets or dicts, or use <code>()</code> for a lazy generator.",
-        why: "Comprehensions are faster than equivalent append loops, express intent clearly, and avoid the boilerplate of initializing and mutating a collection.",
-        apply: [
-          "Keep them to one filter and one transform — if it's complex, use a loop.",
-          "Use a <b>generator expression</b> <code>(...)</code> to stream large data without building a list.",
-          "Prefer dict comprehensions over <code>dict(zip(...))</code> gymnastics.",
-          "Avoid side effects inside a comprehension — build values, don't perform actions."
-        ],
-        code: `nums = [1, 2, 3, 4, 5]\nsquares = [n * n for n in nums if n % 2]   # [1, 9, 25]\nby_name = {u.id: u for u in users}         # dict comprehension`,
-        related: ["generators", "duck-typing"]
-      },
-      {
-        id: "generators",
-        title: "Generators & yield",
-        lede: "Functions that produce values lazily, one at a time, using <code>yield</code> — ideal for streaming and large or infinite sequences.",
-        what: "<p>Calling a function that contains <code>yield</code> returns a <b>generator</b> object — the body does not run yet. Each <code>next()</code> runs until the next <code>yield</code>, then <b>pauses, keeping its local state</b>. Values are produced on demand, so nothing is held in memory beyond the current item.</p><ul><li><b>Lazy</b> — work happens per item, as the consumer asks.</li><li><b>Stateful</b> — locals survive the pause; that is what makes it resumable.</li><li><b>Single-use</b> — once exhausted it is finished; recreate it to iterate again.</li><li><b>O(1) memory</b> — even over an infinite or file-sized source.</li></ul><h4 class=\"flow-label\">Worked examples</h4><h4>1 — Lazy vs eager: the same comprehension, two costs</h4><p>Square brackets build the whole list now; parentheses build a generator that yields on demand. Same syntax, very different memory profile.</p><pre><code>nums = range(10_000_000)\n\neager = [n * n for n in nums]      # builds 10M ints  -&gt; ~400 MB\nlazy  = (n * n for n in nums)      # builds nothing   -&gt; a few hundred bytes\n\nsum(lazy)                          # streams through, one value at a time\n\nimport sys\nsys.getsizeof(lazy)                # ~200 bytes, whatever the source size</code></pre><h4>2 — An infinite stream, bounded by the consumer</h4><p>The generator never ends; the <i>consumer</i> decides when to stop. Without a bound this loops forever.</p><pre><code>def fib():\n    prev, cur = 0, 1\n    while True:            # no termination condition here\n        yield prev\n        prev, cur = cur, prev + cur\n\nfrom itertools import islice, takewhile\n\nlist(islice(fib(), 10))                  # first 10\nlist(takewhile(lambda n: n &amp;lt; 100, fib()))  # while under 100\n\nfor n in fib():                          # bound it yourself\n    if n &gt; 1_000: break\n    print(n)</code></pre><h4>3 — A pipeline: each stage lazy, memory flat</h4><p>Generators compose end to end. Nothing is materialised between stages, so a 10 GB log costs the same memory as a 10 KB one.</p><pre><code>def read(path):\n    with open(path) as f:\n        yield from f                       # one line at a time\n\ndef parse(lines):\n    for line in lines:\n        yield json.loads(line)\n\ndef errors(records):\n    for r in records:\n        if r[&quot;level&quot;] == &quot;ERROR&quot;:\n            yield r\n\n# wiring it up runs nothing yet\npipeline = errors(parse(read(&quot;app.log&quot;)))\n\nfor rec in pipeline:                       # now it starts pulling\n    alert(rec)</code></pre><h4>4 — <code>yield from</code>: delegation and recursion</h4><p><code>yield from</code> hands control to another iterable — and makes recursive generators read naturally.</p><pre><code>def flatten(items):\n    for item in items:\n        if isinstance(item, list):\n            yield from flatten(item)     # recurse into the sub-list\n        else:\n            yield item\n\nlist(flatten([1, [2, [3, 4]], 5]))       # [1, 2, 3, 4, 5]\n\n# equivalent, without the delegation sugar:\n#     for x in flatten(item):\n#         yield x</code></pre><h4>5 — Single-use: the classic surprise</h4><p>A generator is an iterator, not a collection. The second pass sees nothing — and <code>len()</code> never works.</p><pre><code>g = (n for n in range(3))\n\nlist(g)        # [0, 1, 2]\nlist(g)        # []        &lt;- already exhausted\nlen(g)         # TypeError: object of type generator has no len()\n\n# need it twice? recreate it, or materialise deliberately:\nrows = list(read(&quot;small.csv&quot;))</code></pre><h4>6 — <code>return</code> inside a generator carries a value</h4><p><code>return</code> ends the generator and its value is attached to <code>StopIteration</code> — which is exactly what <code>yield from</code> gives back.</p><pre><code>def read_chunk(f, n):\n    count = 0\n    for line in f:\n        yield line\n        count += 1\n        if count == n:\n            return count            # not yielded — returned\n\ndef driver(f):\n    total = yield from read_chunk(f, 100)   # captures the return value\n    print(f&quot;read {total} lines&quot;)</code></pre><h4>7 — Two-way: <code>send()</code> pushes values in</h4><p>A generator can also <i>receive</i>. <code>yield</code> is an expression, so <code>send(x)</code> resumes it with <code>x</code> as the result. Prime it with <code>next()</code> first.</p><pre><code>def running_average():\n    total = count = 0\n    average = None\n    while True:\n        value = yield average      # emit, then wait for the next input\n        total += value\n        count += 1\n        average = total / count\n\navg = running_average()\nnext(avg)          # prime it: run up to the first yield\navg.send(10)       # 10.0\navg.send(20)       # 15.0\navg.close()        # raises GeneratorExit inside, so finally blocks run</code></pre><h4>8 — Generators as context managers</h4><p><code>@contextmanager</code> turns a single-yield generator into a <code>with</code> block: everything before the yield is setup, everything after is teardown.</p><pre><code>from contextlib import contextmanager\n\n@contextmanager\ndef timed(label):\n    start = time.perf_counter()\n    try:\n        yield                       # the with-block body runs here\n    finally:\n        print(f&quot;{label}: {time.perf_counter() - start:.3f}s&quot;)\n\nwith timed(&quot;query&quot;):\n    rows = db.fetch_all()</code></pre>",
-        why: "Generators cut memory use to O(1) for pipelines, enable infinite streams, and compose cleanly with <code>for</code>, <code>sum</code>, and other consumers — the backbone of Python's iterator protocol.",
-        apply: [
-          "Use a generator when the full list won't fit in memory or you may stop early.",
-          "Chain them into pipelines — each stage stays lazy, memory stays flat.",
-          "Remember they're single-use: once exhausted, recreate it to iterate again.",
-          "Use <code>yield from</code> to delegate to another iterable, or to recurse.",
-          "Bound an infinite generator at the consumer — <code>islice</code>, <code>takewhile</code>, or <code>break</code>."
-        ],
-        code: `def read_lines(path):\n    with open(path) as f:\n        for line in f:        # lazy: one line at a time\n            yield line.rstrip()\n\nfor line in read_lines("big.log"):\n    ...`,
-        related: ["list-comprehension", "context-managers"]
-      },
-      {
-        id: "context-managers",
-        title: "Context Managers (with)",
-        lede: "The <code>with</code> statement guarantees setup and cleanup run as a pair — files close, locks release — even if an error is raised.",
-        what: "A context manager implements <code>__enter__</code> and <code>__exit__</code>. The <code>with</code> block calls <code>__enter__</code> on entry and always calls <code>__exit__</code> on the way out, passing any exception so it can clean up (and optionally suppress it).",
-        why: "It replaces error-prone <code>try/finally</code> boilerplate with a single, readable line and makes resource leaks far less likely.",
-        apply: [
-          "Use <code>with open(...) as f:</code> for files instead of manual <code>close()</code>.",
-          "Write your own with <code>contextlib.contextmanager</code> and a single <code>yield</code>.",
-          "Open multiple resources in one <code>with a, b:</code> statement.",
-          "Use <code>contextlib.suppress(Error)</code> to ignore an expected exception cleanly."
-        ],
-        code: `from contextlib import contextmanager\n\n@contextmanager\ndef timer():\n    import time; t = time.perf_counter()\n    yield\n    print(f"{time.perf_counter() - t:.3f}s")\n\nwith timer():\n    do_work()`,
-        related: ["generators", "dunder-methods"]
-      }
-    ]
-  }
 ];
 
 /* ---- Index (built-in + custom terms, rebuildable) ---- */
@@ -3082,7 +2979,14 @@ async function boot() {
     selectQA(initial.slice(3));                   // #qa/<id>
     loadDocs();
   } else {
-    select(TERMS[initial] ? initial : GROUPS[0].terms[0].id);
+    // No BUILTIN_GROUPS here — every term lives in Drive — so an empty
+    // terms.json leaves nothing to land on; say so instead of throwing.
+    const first = GROUPS[0] && GROUPS[0].terms[0];
+    if (TERMS[initial]) select(initial);
+    else if (first) select(first.id);
+    else detail.innerHTML = '<h2 class="term-title">Nothing here yet</h2>'
+      + '<p style="color:var(--muted);line-height:1.65">This module\'s content lives in Google Drive.'
+      + ' Use <b>+ Add term</b>, <b>+ Add Q&amp;A</b> or <b>+ Add Topic</b> in the left panel to write the first one.</p>';
     loadDocs();                                   // warm the docs cache so Search covers them immediately
   }
 }
