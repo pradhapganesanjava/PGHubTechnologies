@@ -13,6 +13,7 @@ import { installMedia }        from './media.js'
 import { installGate }         from './gate.js'
 import { installDocsUpload }   from './docs-upload.js'
 import { installPager }        from './pager.js'
+import { installAiNote }      from './ai-note.js'
 
 // Stamped by tools/build-app.py. The ?m= fallback exists so a page can be
 // pointed at another module's folder by hand when debugging.
@@ -30,6 +31,9 @@ installDocsUpload({ onFlush: flush })
 // Previous / Next under every term, Q&A and topic, in the sidebar's own order —
 // see the note in pager.js.
 installPager()
+
+// Pasted notes into a filed term, Q&A or topic — see the note in ai-note.js.
+installAiNote()
 
 // ── shared preferences ──────────────────────────────────────────────────────
 // The page's own applyTheme is a plain function in its inline script, so it is

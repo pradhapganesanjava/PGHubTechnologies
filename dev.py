@@ -13,6 +13,9 @@ unregistered origin makes Google reject the sign-in popup with origin_mismatch.
 
 Run:  python3 dev.py          then open http://localhost:5173/
       python3 dev.py 5174     (must also be a registered origin)
+
+If the port is taken, the next free one is used and printed — which is only
+useful for sign-in if that origin is registered too.
 """
 import errno
 import os
@@ -21,6 +24,7 @@ import sys
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+TRIES = 20      # how far past the requested port to look for a free one
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", "5173"))
 
 
@@ -59,26 +63,36 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     HTTPServer.allow_reuse_address = True
-    try:
-        httpd = HTTPServer(("127.0.0.1", PORT), Handler)
-    except OSError as e:
-        if e.errno != errno.EADDRINUSE:
-            raise
-        sys.exit(
-            f"\n  Port {PORT} is already in use — something else is serving on it.\n"
-            f"  Pick another with:  python3 dev.py <port>\n"
-            f"  Remember to add http://localhost:<port> to the OAuth client's\n"
-            f"  authorized JavaScript origins, or Google will refuse sign-in.\n"
-        )
-    # Binding 127.0.0.1 leaves ::1 free, so a Vite server on the same port
-    # keeps working and "localhost" then resolves to whichever the browser
-    # prefers — usually the other one. Say the address that is actually ours.
-    print(f"  PG Hub Technologies  →  http://127.0.0.1:{PORT}/")
+    # A busy port is usually this server already running in another terminal.
+    # Walk forward to the next free one rather than stopping.
+    wanted, httpd = PORT, None
+    for PORT in range(wanted, wanted + TRIES):
+        try:
+            httpd = HTTPServer(("127.0.0.1", PORT), Handler)
+            break
+        except OSError as e:
+            if e.errno != errno.EADDRINUSE:
+                raise
+    if httpd is None:
+        sys.exit(f"\n  Ports {wanted}–{wanted + TRIES - 1} are all in use.\n")
+    if PORT != wanted:
+        print(f"\n  Port {wanted} is already in use — using {PORT} instead.")
+        print(f"  Google will refuse sign-in unless http://localhost:{PORT} and")
+        print(f"  http://127.0.0.1:{PORT} are authorized JavaScript origins on the")
+        print(f"  OAuth client. If {wanted} is this server in another terminal, use that.\n")
+    # Google matches the origin exactly, and "localhost" is the one registered
+    # on the OAuth client — 127.0.0.1 is a different origin and is refused with
+    # origin_mismatch. So localhost is the address to print, unless something
+    # else holds [::1] on this port (a Vite server, say): binding 127.0.0.1
+    # leaves ::1 free, and "localhost" may then reach that other server.
     if _also_on_ipv6(PORT):
+        print(f"  PG Hub Technologies  →  http://127.0.0.1:{PORT}/")
         print(f"\n  NOTE: something else is listening on [::1]:{PORT}, so")
         print(f"        http://localhost:{PORT}/ may reach that instead.")
         print(f"        Use the 127.0.0.1 address above, and make sure it is an")
         print(f"        authorized JavaScript origin on the OAuth client.")
+    else:
+        print(f"  PG Hub Technologies  →  http://localhost:{PORT}/")
     print("\n  (sign in with the Google account that owns the Drive folder)\n")
     try:
         httpd.serve_forever()

@@ -29,6 +29,10 @@ export const Config = {
   rootFolderName: 'PGHubTechnologies',
   manifestSheetName: 'PGHubTechnologies Manifest',
 
+  // The PG Hub Tech portal's Sheet, whose Settings tab holds the AI credentials
+  // that app/ai-note.js borrows. Looked up by name; the id is never committed.
+  portalSheetNames: ['PGHubTechApp', 'PG Hub Tech Data'],
+
   /* Scopes.
    *
    * `drive.file` grants access per-file to files the *application* created,
