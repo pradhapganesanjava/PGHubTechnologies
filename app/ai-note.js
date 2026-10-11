@@ -31,9 +31,47 @@ import { Config, LS } from './config.js'
 import { GAuth } from './gauth.js'
 import { Store, flush } from './store.js'
 
-// Pages whose stylesheet carries the reading components the model writes
-// against (.tldr, .recall, ol.steps, .callout, figure.diagram).
-const ENABLED = new Set(['JavaScript'])
+/* The reading components the model writes against. JavaScript and ReactJs
+   carry them in their own stylesheets; the older pages do not, and an answer
+   written with them would fall flat there. Rather than have the model write a
+   second, plainer dialect for sixteen pages, the rules are supplied to any page
+   that lacks them — copied from JavaScriptNotes.html, with fallbacks for the
+   status colours the oldest themes never defined. */
+const COMPONENTS_CSS = `
+.callout {
+  border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  background: var(--panel-2); border-radius: 0 8px 8px 0;
+  padding: 9px 13px; margin: 0 0 12px; font-size: 14px; line-height: 1.6;
+}
+.callout.warn   { border-left-color: var(--warn, #e3a008); }
+.callout.danger { border-left-color: var(--danger, #e5534b); }
+.callout.good   { border-left-color: var(--ok, #3fb950); }
+.rich .tldr, .tldr {
+  position: relative; border: 1px solid var(--accent); background: var(--accent-soft);
+  border-radius: 10px; padding: 12px 14px; margin: 0 0 16px;
+  font-size: 15.5px; line-height: 1.6; color: var(--text);
+}
+.tldr::before {
+  content: "In one line"; display: block; margin-bottom: 3px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent);
+}
+.recall {
+  border: 1px dashed var(--accent); border-radius: 10px; background: var(--panel-2);
+  padding: 10px 14px; margin: 14px 0; font-size: 14.5px; line-height: 1.6;
+}
+.recall::before { content: "\\1F9E0  "; }
+.rich h4 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 18px 0 8px; }
+.rich mark { background: var(--accent-soft); color: var(--text); border-bottom: 2px solid var(--accent); padding: 0 3px; border-radius: 3px; }
+ol.steps { list-style: none; counter-reset: st; padding-left: 0; margin: 8px 0 14px; }
+ol.steps > li { counter-increment: st; position: relative; padding: 2px 0 8px 36px; line-height: 1.6; }
+ol.steps > li::before {
+  content: counter(st); position: absolute; left: 0; top: 1px; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-ink, #fff); font-size: 12.5px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+`
+const hasComponents = () =>
+  [...document.querySelectorAll('style')].some(s => s.textContent.includes('.tldr'))
 
 // How the pages nest one group under another: "Async::Promises".
 const TAG_SEP = '::'
@@ -329,8 +367,12 @@ const el = (tag, props = {}, ...kids) => {
 
 export function installAiNote() {
   const tabs = document.querySelector('.tabs')
-  if (!tabs || !ENABLED.has(Store.mod)) return
+  // No module, no target: every write goes to Store.mod's own Drive folder,
+  // so a page that does not know which module it is gets no button.
+  if (!tabs || !Store.mod) return
 
+  // Prepended, so a page that later grows its own rules for these wins.
+  if (!hasComponents()) document.head.prepend(el('style', { textContent: COMPONENTS_CSS }))
   document.head.appendChild(el('style', { textContent: CSS }))
 
   const log    = el('div', { className: 'ai-log' })
