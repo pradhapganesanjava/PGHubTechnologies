@@ -14,7 +14,7 @@
  *
  *   node tools/mobile/build-harness.mjs      → tools/mobile/harness/
  */
-import { cp, mkdir, writeFile, rm, readFile } from 'node:fs/promises'
+import { cp, mkdir, writeFile, rm, readFile, readdir } from 'node:fs/promises'
 import { dirname, join }                      from 'node:path'
 import { fileURLToPath }                      from 'node:url'
 
@@ -88,6 +88,10 @@ const HUB_INDEX = { modules: MODS.map(dir => ({
 
 const SEARCH = ${JSON.stringify(search)}
 const ROOT_FILES = {}
+// A module file's id is "mod/name", so a read by id can find its way back to
+// the fixtures. The version is this build's, so the page's IndexedDB cache
+// never serves fixtures left there by an older harness.
+const VERSION = ${JSON.stringify(String(Date.now()))}
 export async function readRootJson(name, fb) {
   if (name === 'hub.json')          return HUB
   if (name === 'hub-index.json')    return HUB_INDEX
@@ -111,8 +115,16 @@ export async function findChild()   { return null }
 export async function listFolder()  { return [] }
 export async function readBlobById(){ return new Blob(['<h1>Doc</h1>'], { type: 'text/html' }) }
 export async function readTextById(){ return '# Doc' }
-export async function readJsonById(id, fb) { return fb ?? {} }
+// The store's cold load is moduleFileMeta → readJsonById(meta.id), not
+// readModuleJson, so both have to serve the fixtures.
+export async function moduleFileMeta(mod, name) { return { id: mod + '/' + name, version: VERSION } }
+export async function readJsonById(id, fb) {
+  const i = String(id).lastIndexOf('/')
+  return i < 0 ? (fb ?? {}) : readModuleJson(id.slice(0, i), id.slice(i + 1), fb)
+}
+export const versionWritten = () => null      // "unknown": the next visit refetches
 export async function createFile()  { return 'NEW' }
+export async function updateFile(id) { return id }
 export async function ensureFolder(){ return 'F' }
 export async function rootId()      { return 'ROOT' }
 export function clearIdCache() {}
@@ -130,6 +142,27 @@ await cp(join(REPO, 'app'),    join(OUT, 'app'),    { recursive: true })
 await cp(join(REPO, 'vendor'), join(OUT, 'vendor'), { recursive: true })
 await writeFile(join(OUT, 'app', 'gate.js'),  GATE_STUB)
 await writeFile(join(OUT, 'app', 'drive.js'), DRIVE_STUB)
+
+// The stubs stand in for real modules, so they rot whenever those grow an
+// export someone imports — and a missing export does not fail softly: it is a
+// SyntaxError that stops every page importing it from booting at all. Fail the
+// build instead, naming what to add.
+for (const [stub, src] of [['drive.js', DRIVE_STUB], ['gate.js', GATE_STUB]]) {
+  const exported = new Set([...src.matchAll(/export\s+(?:async\s+)?(?:function|const|let)\s+(\w+)/g)].map(m => m[1]))
+  const missing = new Map()
+  for (const f of (await readdir(join(REPO, 'app'))).filter(f => f.endsWith('.js'))) {
+    const code = await readFile(join(REPO, 'app', f), 'utf8')
+    const from = new RegExp(`import\\s*\\{([^}]*)\\}\\s*from\\s*'\\./${stub.replace('.', '\\.')}'`, 'g')
+    for (const m of code.matchAll(from))
+      for (const name of m[1].split(',').map(x => x.trim().split(/\s+as\s+/)[0]).filter(Boolean))
+        if (!exported.has(name)) missing.set(name, [...(missing.get(name) ?? []), f])
+  }
+  if (missing.size) {
+    console.error(`  harness ${stub} stub is missing exports the app imports:`)
+    for (const [name, files] of missing) console.error(`    ${name}  (imported by ${files.join(', ')})`)
+    process.exit(1)
+  }
+}
 
 // frame.html renders one page in an exactly-390px iframe. Screenshotting the
 // frame rather than resizing the browser window guarantees the captured
