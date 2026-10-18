@@ -6,13 +6,8 @@
  * the result is shown as a draft. Nothing reaches Drive until Apply.
  *
  * WHERE THE KEY COMES FROM
- * Not from this repository, which is public. The PG Hub Tech portal keeps its
- * Azure OpenAI credentials in its Sheet's Settings tab and mirrors them into
- * localStorage under `pghtech_`. GitHub Pages serves both apps from one
- * origin, so that mirror is readable here. Where it is absent — a browser that
- * has never opened the portal, or localhost — the same Settings tab is read
- * directly, from the Sheet found in Drive by name; this app already asks for
- * the spreadsheets scope.
+ * Not from this repository, which is public: from the PG Hub Tech portal's
+ * settings, through ./ai-creds.js, which voice practice shares.
  *
  * WHY TWO CALLS
  * The portal's noteGen.ts learned it first: HTML inside a JSON string escapes
@@ -27,9 +22,8 @@
  * already on the new item redraws from what was just saved — the same reason
  * docs-upload.js reloads.
  */
-import { Config, LS } from './config.js'
-import { GAuth } from './gauth.js'
 import { Store, flush } from './store.js'
+import { credentials, useSheet } from './ai-creds.js'
 
 /* The reading components the model writes against. JavaScript and ReactJs
    carry them in their own stylesheets; the older pages do not, and an answer
@@ -76,8 +70,6 @@ const hasComponents = () =>
 // How the pages nest one group under another: "Async::Promises".
 const TAG_SEP = '::'
 
-const PORTAL_NS = 'pghtech_'
-const DEFAULTS  = { deployment: 'gpt-4o', apiVersion: '2024-12-01-preview' }
 const PLAN_TOKENS   = 800
 const RENDER_TOKENS = 8000
 
@@ -132,69 +124,6 @@ const CSS = `
 #pghub-ai .ai-row { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
 #pghub-ai .ai-row button { margin-left: auto; }
 `
-
-// ── credentials ──────────────────────────────────────────────────────────────
-
-function fromPortalMirror() {
-  const ls = k => { try { return localStorage.getItem(PORTAL_NS + k) } catch { return null } }
-  return {
-    endpoint:   ls('aze') || '',
-    apiKey:     ls('azk') || '',
-    deployment: ls('azd') || DEFAULTS.deployment,
-    apiVersion: ls('azv') || DEFAULTS.apiVersion,
-  }
-}
-
-/** The portal Sheet's Settings tab is `key | value`, one setting per row. */
-async function fromPortalSheet(sheetId) {
-  const r = await GAuth.fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheetId)}/values/Settings!A:B`)
-  if (!r.ok) throw new Error(`Could not read the portal's Settings tab (${r.status}).`)
-  const s = Object.fromEntries(((await r.json()).values ?? []).map(row => [row[0], row[1] ?? '']))
-  return {
-    endpoint:   s.ai_endpoint || '',
-    apiKey:     s.ai_api_key || '',
-    deployment: s.ai_deployment || DEFAULTS.deployment,
-    apiVersion: s.ai_api_version || DEFAULTS.apiVersion,
-  }
-}
-
-const sheetId = () => {
-  let own = null
-  try { own = localStorage.getItem(PORTAL_NS + 'sid') } catch {}
-  return own || LS.get('ai_sid') || ''
-}
-
-/**
- * Find the portal's Sheet by name. The page knows which module it is, so the
- * reader should never be asked which spreadsheet to use: the content target is
- * the module's own Drive files, and the credentials Sheet is looked up here.
- * A candidate only counts if its Settings tab actually carries the key.
- */
-async function discoverPortalSheet() {
-  const names = Config.portalSheetNames.map(n => `name='${n.replace(/'/g, "\\'")}'`).join(' or ')
-  const q = `mimeType='application/vnd.google-apps.spreadsheet' and trashed=false and (${names})`
-  const r = await GAuth.fetch('https://www.googleapis.com/drive/v3/files?fields=files(id)' +
-    `&orderBy=modifiedTime desc&pageSize=10&q=${encodeURIComponent(q)}`)
-  if (!r.ok) return null
-  for (const f of (await r.json()).files ?? []) {
-    try {
-      const c = await fromPortalSheet(f.id)
-      if (c.endpoint && c.apiKey) { LS.set('ai_sid', f.id); return c }
-    } catch { /* not readable, or no Settings tab — try the next */ }
-  }
-  return null
-}
-
-let _creds = null
-async function credentials() {
-  if (_creds) return _creds
-  const ok = c => c && c.endpoint && c.apiKey
-  let c = fromPortalMirror()
-  if (!ok(c) && sheetId()) c = await fromPortalSheet(sheetId()).catch(() => null)
-  if (!ok(c)) c = await discoverPortalSheet()
-  return ok(c) ? (_creds = c) : null
-}
 
 // ── model ────────────────────────────────────────────────────────────────────
 
@@ -418,7 +347,7 @@ export function installAiNote() {
       const v = box.value.trim()
       const id = (v.match(/\/d\/([\w-]+)/) || [])[1] || v
       if (!id) return
-      LS.set('ai_sid', id)
+      useSheet(id)
       say('info', 'Saved. Press Generate again.')
     })
     say('info', el('div', {},

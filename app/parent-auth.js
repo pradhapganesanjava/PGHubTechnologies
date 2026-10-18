@@ -28,7 +28,7 @@ const DEV_ORIGINS = [
   'http://localhost:5173', 'http://127.0.0.1:5173',
   'http://localhost:5174', 'http://127.0.0.1:5174',
 ]
-const TRUSTED = [HOST_ORIGIN, ...DEV_ORIGINS]
+export const TRUSTED = [HOST_ORIGIN, ...DEV_ORIGINS]
 
 export const framed = () => window.parent !== window
 
@@ -80,7 +80,7 @@ export function installParentAuth(onAuth) {
  * strips it — fall back to asking each in turn, which is noisy but no less
  * safe, since every target is still an origin on the list.
  */
-function hostOrigins() {
+export function hostOrigins() {
   let named = null
   try {
     named = location.ancestorOrigins?.[0]
