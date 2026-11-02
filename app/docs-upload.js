@@ -35,8 +35,12 @@ const MOUNT_ID = 'pghub-doc-upload'
    window rather than a column inside it — 32px of side padding is a tenth of a
    narrow screen. The chrome around it keeps its margin so the title and the way
    out stay where everything else on the page sits. Framed documents only:
-   markdown is prose, and prose still wants the gutter. */
+   markdown is prose, and prose still wants the gutter.
+
+   The frame is white on every width because an uploaded page with no background
+   of its own is transparent, and its default black text sat on the dark theme. */
 const CSS = `
+.pdf-frame { background: #fff; }
 @media (max-width: 860px) {
   main:has(.pdf-view) { padding-left: 0; padding-right: 0; }
   main:has(.pdf-view) .doc-back,
