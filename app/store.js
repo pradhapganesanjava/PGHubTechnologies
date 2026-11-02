@@ -285,6 +285,10 @@ async function docsIndex() {
   return Store._docs
 }
 
+function decodeFilename(raw) {
+  try { return decodeURIComponent(raw) } catch { return raw }
+}
+
 /**
  * POST /docs — put a document into this module's docs/ folder in Drive.
  *
@@ -300,8 +304,9 @@ async function docsIndex() {
  *     page would sit in Drive and never appear in the listing.
  */
 async function handleDocUpload(req) {
-  const sent = req.headers.get('X-Filename') || ''
-  const name = sent.split(/[\\/]/).pop().trim().replace(/[^A-Za-z0-9._ -]/g, '_')
+  const sent = decodeFilename(req.headers.get('X-Filename') || '')
+  const name = sent.normalize('NFC').split(/[\\/]/).pop().replace(/\s+/g, ' ').trim()
+    .replace(/[^\p{L}\p{M}\p{N}\p{Pd}._ ]/gu, '_')
   const type = typeOf(name)
   if (!type) return json({ error: `Not a document type this hub renders: ${sent}` }, 400)
 
