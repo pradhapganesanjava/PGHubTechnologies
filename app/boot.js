@@ -14,6 +14,7 @@ import { installGate }         from './gate.js'
 import { installDocsUpload }   from './docs-upload.js'
 import { installPager }        from './pager.js'
 import { installAiNote }      from './ai-note.js'
+import { installScratchPad }  from './scratch-pad.js'
 
 // Stamped by tools/build-app.py. The ?m= fallback exists so a page can be
 // pointed at another module's folder by hand when debugging.
@@ -34,6 +35,9 @@ installPager()
 
 // Pasted notes into a filed term, Q&A or topic — see the note in ai-note.js.
 installAiNote()
+
+// A page to jot on over whatever is being read — see the note in scratch-pad.js.
+installScratchPad()
 
 // ── shared preferences ──────────────────────────────────────────────────────
 // The page's own applyTheme is a plain function in its inline script, so it is
